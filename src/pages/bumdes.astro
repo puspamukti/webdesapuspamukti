@@ -1,0 +1,130 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { supabase } from '../lib/supabase';
+
+// Fetch BUMDes Profile from Supabase
+const { data: dbProfil } = await supabase
+  .from('bumdes_profil')
+  .select('*')
+  .eq('id', 1)
+  .single();
+
+// Fetch BUMDes Units from Supabase
+const { data: dbUnits } = await supabase
+  .from('bumdes_unit')
+  .select('*')
+  .order('created_at', { ascending: true });
+
+// Fallback Profile
+const profil = dbProfil || {
+  nama: "BUMDes Puspamukti",
+  deskripsi: "Profil dan unit usaha BUMDes saat ini belum diisi oleh admin desa.",
+  total_mitra: 0
+};
+
+// Fallback Units
+const unitUsaha = dbUnits || [];
+
+const totalUnits = unitUsaha.length;
+---
+
+<Layout title="BUMDes Puspamukti">
+  <div class="container mx-auto px-4 max-w-screen-xl py-12 md:py-20 space-y-24">
+    
+    <!-- Hero Section -->
+    <div class="flex flex-col lg:flex-row gap-12 items-center">
+      <div class="w-full lg:w-1/2 space-y-6 text-center lg:text-left">
+        <div class="inline-flex items-center rounded-full border px-3 py-1 text-sm font-semibold border-primary/20 bg-primary/10 text-primary mb-2">
+          Pusat Ekonomi Desa
+        </div>
+        <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-tight">
+          Badan Usaha Milik Desa
+        </h1>
+        <p class="text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto lg:mx-0">
+          Motor penggerak perekonomian Desa Puspamukti. BUMDes hadir untuk mengelola potensi desa, memberdayakan UMKM, dan meningkatkan kesejahteraan masyarakat secara mandiri dan berkelanjutan.
+        </p>
+      </div>
+      <div class="w-full lg:w-1/2">
+        <div class="aspect-video w-full rounded-3xl overflow-hidden bg-muted border-2 shadow-lg relative group">
+          <div class="absolute inset-0 bg-gradient-to-tr from-primary/10 to-secondary/30 flex items-center justify-center transition-transform group-hover:scale-105 duration-700">
+            <div class="text-center text-muted-foreground bg-background/80 backdrop-blur px-6 py-4 rounded-xl border shadow-sm">
+               <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-primary mb-2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
+               <p class="font-medium text-foreground text-sm">Foto Kantor/Kegiatan BUMDes</p>
+               <p class="text-xs">Rasio 16:9 (Landscape)</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profil BUMDes -->
+    <div class="bg-card border shadow-sm rounded-3xl p-8 md:p-12">
+      <div class="max-w-4xl mx-auto text-center space-y-6">
+        <h2 class="text-2xl md:text-3xl font-bold text-foreground">"{profil.nama}"</h2>
+        <p class="text-muted-foreground text-lg leading-relaxed font-medium">
+          {profil.deskripsi}
+        </p>
+        <div class="flex flex-wrap justify-center gap-4 pt-4">
+          <div class="flex flex-col p-4 bg-muted/50 rounded-2xl min-w-[150px] border">
+            <span class="text-3xl font-bold text-primary mb-1">{totalUnits}</span>
+            <span class="text-sm font-semibold text-muted-foreground">Unit Usaha Aktif</span>
+          </div>
+          <div class="flex flex-col p-4 bg-muted/50 rounded-2xl min-w-[150px] border">
+            <span class="text-3xl font-bold text-primary mb-1">{profil.total_mitra || 0}</span>
+            <span class="text-sm font-semibold text-muted-foreground">Mitra UMKM</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Unit Usaha & Layanan -->
+    <div class="space-y-12">
+      <div class="text-center space-y-2">
+        <h2 class="text-3xl font-bold tracking-tight">Unit Usaha & Layanan Kami</h2>
+        <div class="h-1.5 w-20 bg-primary rounded-full mx-auto mt-4"></div>
+      </div>
+
+      {unitUsaha.length === 0 ? (
+        <p class="text-center text-muted-foreground">Belum ada unit usaha BUMDes yang aktif saat ini.</p>
+      ) : (
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {unitUsaha.map((unit) => (
+            <div class="group bg-card border rounded-3xl p-6 hover:shadow-lg hover:border-primary/50 transition-all flex flex-col h-full">
+              <div class="mb-6 flex justify-between items-start">
+                <div class="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                </div>
+                <span class="inline-flex items-center rounded-md bg-secondary px-2.5 py-0.5 text-[10px] font-semibold text-secondary-foreground uppercase tracking-wider">
+                  {unit.kategori}
+                </span>
+              </div>
+              <h3 class="font-bold text-xl text-foreground mb-3 leading-snug">{unit.nama}</h3>
+              <p class="text-sm text-muted-foreground leading-relaxed flex-grow font-medium">{unit.deskripsi}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+
+    <!-- Call to Action (Ajakan Kemitraan) -->
+    <div class="bg-primary text-primary-foreground rounded-3xl p-8 md:p-12 text-center relative overflow-hidden shadow-xl">
+      <!-- Decorative circles -->
+      <div class="absolute top-0 left-0 w-64 h-64 bg-primary-foreground/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+      <div class="absolute bottom-0 right-0 w-64 h-64 bg-background/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
+      
+      <div class="relative z-10 max-w-2xl mx-auto space-y-6">
+        <h2 class="text-3xl md:text-4xl font-bold">Punya Produk Unggulan?</h2>
+        <p class="text-lg opacity-90 leading-relaxed font-medium">
+          BUMDes Puspamukti selalu terbuka untuk menjalin kemitraan dengan para pengrajin, petani, dan pelaku UMKM lokal. Mari kembangkan usaha Anda bersama kami!
+        </p>
+        <div class="pt-4">
+          <a href="/kontak" class="inline-flex items-center justify-center rounded-xl bg-background text-foreground hover:bg-background/90 text-sm font-semibold h-12 px-8 transition-colors shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 text-primary"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            Hubungi Pengurus BUMDes
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</Layout>

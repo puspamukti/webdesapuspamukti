@@ -1,0 +1,386 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Fetch current data
+const { data: anggaran } = await supabase
+  .from('apbdes')
+  .select('*')
+  .order('tahun', { ascending: false });
+
+const anggaranList = anggaran || [];
+---
+<AdminLayout title="Kelola Transparansi Anggaran">
+  <div class="space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight text-foreground">Transparansi Anggaran</h1>
+        <p class="text-muted-foreground mt-1">Kelola data rincian APBDes (Pendapatan & Belanja) serta Infografis.</p>
+      </div>
+      <button 
+        id="add-anggaran-btn"
+        class="inline-flex items-center justify-center rounded-xl text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 gap-2 shadow-md cursor-pointer"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+        Tambah Data APBDes
+      </button>
+    </div>
+
+    <!-- Table Container -->
+    <div class="bg-card border rounded-3xl shadow-sm overflow-hidden animate-fade-in">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+          <thead class="bg-muted/50 text-muted-foreground font-semibold border-b">
+            <tr>
+              <th class="px-6 py-4">Tahun</th>
+              <th class="px-6 py-4">Total Pendapatan (Rp)</th>
+              <th class="px-6 py-4">Total Belanja (Rp)</th>
+              <th class="px-6 py-4">Status / Saldo</th>
+              <th class="px-6 py-4 text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y" id="anggaran-table-body">
+            {anggaranList.length === 0 ? (
+              <tr>
+                <td colspan="5" class="px-6 py-8 text-center text-muted-foreground">
+                  Belum ada data rincian anggaran yang dimasukkan. Silakan tambah data baru.
+                </td>
+              </tr>
+            ) : (
+              anggaranList.map((item) => {
+                const totalPendapatan = (item.pendapatan_asli_desa || 0) + (item.dana_desa || 0) + (item.alokasi_dana_desa || 0) + (item.bantuan_provinsi || 0) + (item.bantuan_kabupaten || 0) + (item.pendapatan_lain || 0);
+                const totalBelanja = (item.belanja_pegawai || 0) + (item.belanja_barang_jasa || 0) + (item.belanja_modal || 0) + (item.belanja_tak_terduga || 0);
+                const saldo = totalPendapatan - totalBelanja;
+                
+                return (
+                  <tr class="hover:bg-muted/30 transition-colors">
+                    <td class="px-6 py-4 font-bold text-foreground">
+                      {item.tahun}
+                    </td>
+                    <td class="px-6 py-4">
+                      {totalPendapatan.toLocaleString()}
+                    </td>
+                    <td class="px-6 py-4">
+                      {totalBelanja.toLocaleString()}
+                    </td>
+                    <td class="px-6 py-4">
+                      <span class={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                        saldo >= 0 ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600'
+                      }`}>
+                        Sisa: {saldo.toLocaleString()}
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 text-right whitespace-nowrap">
+                      <button 
+                        class="edit-anggaran-btn text-primary hover:underline text-xs font-bold mr-3 cursor-pointer"
+                        data-raw={JSON.stringify(item)}
+                      >
+                        Edit Rincian
+                      </button>
+                      <button 
+                        class="delete-anggaran-btn text-destructive hover:underline text-xs font-bold cursor-pointer"
+                        data-id={item.id}
+                        data-tahun={item.tahun}
+                      >
+                        Hapus
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Form -->
+  <div id="anggaran-modal" class="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-card border w-full max-w-4xl rounded-3xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="px-6 py-5 border-b flex justify-between items-center bg-muted/20">
+        <h3 id="modal-title" class="font-bold text-lg text-foreground font-sans">Form Rincian APBDes</h3>
+        <button id="close-modal-btn" class="p-1.5 rounded-lg hover:bg-muted text-muted-foreground">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="anggaran-form" class="p-6 space-y-6 flex-1 overflow-y-auto" novalidate>
+        <input type="hidden" id="anggaran-id" />
+        
+        <div class="space-y-1.5 w-full md:w-1/3 text-left">
+          <label class="text-xs font-bold text-foreground uppercase tracking-wider">Tahun Anggaran</label>
+          <input 
+            type="number" 
+            id="anggaran-tahun" 
+            placeholder="Contoh: 2025" 
+            min="2000"
+            max="2099"
+            class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs transition-colors"
+            required
+          />
+          <p id="anggaran-tahun-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+            <span>Masukkan 4 digit tahun yang valid (2000 - 2099).</span>
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <!-- Kolom Pendapatan -->
+          <div class="space-y-4">
+            <h4 class="font-bold border-b pb-2 text-primary">Rincian Pendapatan (Rp)</h4>
+            
+            <div class="space-y-1.5">
+              <label class="text-xs font-medium text-foreground">Pendapatan Asli Desa (PAD)</label>
+              <input type="number" id="p-pad" class="flex h-10 w-full rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary" value="0" required />
+            </div>
+            
+            <div class="space-y-1.5">
+              <label class="text-xs font-medium text-foreground">Dana Desa (DD)</label>
+              <input type="number" id="p-dd" class="flex h-10 w-full rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary" value="0" required />
+            </div>
+            
+            <div class="space-y-1.5">
+              <label class="text-xs font-medium text-foreground">Alokasi Dana Desa (ADD)</label>
+              <input type="number" id="p-add" class="flex h-10 w-full rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary" value="0" required />
+            </div>
+            
+            <div class="space-y-1.5">
+              <label class="text-xs font-medium text-foreground">Bantuan Keuangan Provinsi</label>
+              <input type="number" id="p-banprov" class="flex h-10 w-full rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary" value="0" required />
+            </div>
+            
+            <div class="space-y-1.5">
+              <label class="text-xs font-medium text-foreground">Bantuan Keuangan Kabupaten</label>
+              <input type="number" id="p-bankab" class="flex h-10 w-full rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary" value="0" required />
+            </div>
+            
+            <div class="space-y-1.5">
+              <label class="text-xs font-medium text-foreground">Pendapatan Lain-lain</label>
+              <input type="number" id="p-lain" class="flex h-10 w-full rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary" value="0" required />
+            </div>
+          </div>
+
+          <!-- Kolom Belanja -->
+          <div class="space-y-4">
+            <h4 class="font-bold border-b pb-2 text-destructive">Rincian Belanja (Rp)</h4>
+            
+            <div class="space-y-1.5">
+              <label class="text-xs font-medium text-foreground">Belanja Pegawai (Siltap, Tunjangan)</label>
+              <input type="number" id="b-pegawai" class="flex h-10 w-full rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary" value="0" required />
+            </div>
+            
+            <div class="space-y-1.5">
+              <label class="text-xs font-medium text-foreground">Belanja Barang & Jasa</label>
+              <input type="number" id="b-barang" class="flex h-10 w-full rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary" value="0" required />
+            </div>
+            
+            <div class="space-y-1.5">
+              <label class="text-xs font-medium text-foreground">Belanja Modal (Infrastruktur/Pembangunan)</label>
+              <input type="number" id="b-modal" class="flex h-10 w-full rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary" value="0" required />
+            </div>
+            
+            <div class="space-y-1.5">
+              <label class="text-xs font-medium text-foreground">Belanja Tak Terduga (Darurat/Bencana)</label>
+              <input type="number" id="b-takterduga" class="flex h-10 w-full rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary" value="0" required />
+            </div>
+
+            <div class="pt-4 space-y-1.5">
+              <label class="text-xs font-bold text-foreground uppercase">Upload Infografis / Poster APBDes (Opsional)</label>
+              <input type="file" id="gambar-infografis" accept="image/*" class="block w-full text-xs text-muted-foreground file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 cursor-pointer" />
+              <input type="hidden" id="gambar-infografis-url" />
+              <p class="text-[10px] text-muted-foreground">Poster ini akan ditampilkan menonjol di halaman publik.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-4 flex gap-3 border-t sticky bottom-0 bg-card py-2">
+          <button type="button" id="cancel-modal-btn" class="flex-1 inline-flex items-center justify-center rounded-xl text-sm font-bold transition-colors bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2 cursor-pointer">
+            Batal
+          </button>
+          <button type="submit" id="save-btn" class="flex-1 inline-flex items-center justify-center rounded-xl text-sm font-bold transition-colors bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 cursor-pointer">
+            Simpan Rincian APBDes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { supabase } from '../../lib/supabase';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // Modal Elements
+    const modal = document.getElementById('anggaran-modal');
+    const form = document.getElementById('anggaran-form') as HTMLFormElement;
+    
+    // Buttons
+    const addBtn = document.getElementById('add-anggaran-btn');
+    const closeBtn = document.getElementById('close-modal-btn');
+    const cancelBtn = document.getElementById('cancel-modal-btn');
+    const saveBtn = document.getElementById('save-btn');
+    
+    // Inputs
+    const idInput = document.getElementById('anggaran-id') as HTMLInputElement;
+    const tahunInput = document.getElementById('anggaran-tahun') as HTMLInputElement;
+    
+    // Pendapatan
+    const pPad = document.getElementById('p-pad') as HTMLInputElement;
+    const pDd = document.getElementById('p-dd') as HTMLInputElement;
+    const pAdd = document.getElementById('p-add') as HTMLInputElement;
+    const pBanprov = document.getElementById('p-banprov') as HTMLInputElement;
+    const pBankab = document.getElementById('p-bankab') as HTMLInputElement;
+    const pLain = document.getElementById('p-lain') as HTMLInputElement;
+    
+    // Belanja
+    const bPegawai = document.getElementById('b-pegawai') as HTMLInputElement;
+    const bBarang = document.getElementById('b-barang') as HTMLInputElement;
+    const bModal = document.getElementById('b-modal') as HTMLInputElement;
+    const bTakTerduga = document.getElementById('b-takterduga') as HTMLInputElement;
+
+    const gambarInfografisUrl = document.getElementById('gambar-infografis-url') as HTMLInputElement;
+
+    const tahunError = document.getElementById('anggaran-tahun-error');
+
+    function validateTransparansiForm(): boolean {
+      const year = parseInt(tahunInput.value);
+      if (!year || year < 2000 || year > 2099) {
+        tahunInput.classList.add('border-destructive', 'focus-visible:ring-destructive');
+        tahunInput.classList.remove('border-input', 'focus-visible:ring-primary');
+        tahunError?.classList.remove('hidden');
+        return false;
+      } else {
+        tahunInput.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+        tahunInput.classList.add('border-input', 'focus-visible:ring-primary');
+        tahunError?.classList.add('hidden');
+        return true;
+      }
+    }
+
+    tahunInput?.addEventListener('input', () => {
+      if (!tahunError?.classList.contains('hidden')) validateTransparansiForm();
+    });
+
+    const openModal = (isEdit = false, rawData: any = null) => {
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+        tahunError?.classList.add('hidden');
+
+        if (isEdit && rawData) {
+          idInput.value = rawData.id;
+          tahunInput.value = rawData.tahun;
+          pPad.value = rawData.pendapatan_asli_desa || 0;
+          pDd.value = rawData.dana_desa || 0;
+          pAdd.value = rawData.alokasi_dana_desa || 0;
+          pBanprov.value = rawData.bantuan_provinsi || 0;
+          pBankab.value = rawData.bantuan_kabupaten || 0;
+          pLain.value = rawData.pendapatan_lain || 0;
+          
+          bPegawai.value = rawData.belanja_pegawai || 0;
+          bBarang.value = rawData.belanja_barang_jasa || 0;
+          bModal.value = rawData.belanja_modal || 0;
+          bTakTerduga.value = rawData.belanja_tak_terduga || 0;
+          
+          gambarInfografisUrl.value = rawData.gambar_infografis_url || '';
+        } else {
+          form.reset();
+          idInput.value = '';
+          pPad.value = '0'; pDd.value = '0'; pAdd.value = '0'; pBanprov.value = '0'; pBankab.value = '0'; pLain.value = '0';
+          bPegawai.value = '0'; bBarang.value = '0'; bModal.value = '0'; bTakTerduga.value = '0';
+        }
+      }
+    };
+
+    const closeModal = () => {
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        form.reset();
+        tahunError?.classList.add('hidden');
+      }
+    };
+
+    addBtn?.addEventListener('click', () => openModal(false));
+    closeBtn?.addEventListener('click', closeModal);
+    cancelBtn?.addEventListener('click', closeModal);
+    
+    document.querySelectorAll('.edit-anggaran-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const rawData = JSON.parse(target.dataset.raw || '{}');
+        openModal(true, rawData);
+      });
+    });
+
+    document.querySelectorAll('.delete-anggaran-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const id = target.dataset.id;
+        const tahun = target.dataset.tahun;
+
+        if (confirm(`Apakah Anda yakin ingin menghapus data anggaran tahun ${tahun}?`)) {
+          if(target) target.textContent = 'Menghapus...';
+          try {
+            const { error } = await supabase.from('apbdes').delete().eq('id', id);
+            if (error) throw error;
+            window.location.reload();
+          } catch (error) {
+            console.error(error);
+            alert('Gagal menghapus data.');
+            if(target) target.textContent = 'Hapus';
+          }
+        }
+      });
+    });
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!validateTransparansiForm()) return;
+      
+      const id = idInput.value;
+      if(saveBtn) {
+        saveBtn.textContent = 'Menyimpan...';
+        saveBtn.setAttribute('disabled', 'true');
+      }
+      
+      try {
+        const payload = {
+          tahun: parseInt(tahunInput.value),
+          pendapatan_asli_desa: parseInt(pPad.value) || 0,
+          dana_desa: parseInt(pDd.value) || 0,
+          alokasi_dana_desa: parseInt(pAdd.value) || 0,
+          bantuan_provinsi: parseInt(pBanprov.value) || 0,
+          bantuan_kabupaten: parseInt(pBankab.value) || 0,
+          pendapatan_lain: parseInt(pLain.value) || 0,
+          belanja_pegawai: parseInt(bPegawai.value) || 0,
+          belanja_barang_jasa: parseInt(bBarang.value) || 0,
+          belanja_modal: parseInt(bModal.value) || 0,
+          belanja_tak_terduga: parseInt(bTakTerduga.value) || 0,
+        };
+
+        let error;
+        if (id) {
+          const { error: updateError } = await supabase.from('apbdes').update(payload).eq('id', id);
+          error = updateError;
+        } else {
+          const { error: insertError } = await supabase.from('apbdes').insert([payload]);
+          error = insertError;
+        }
+
+        if (error) throw error;
+        window.location.reload();
+      } catch (error) {
+        console.error(error);
+        alert('Gagal menyimpan data.');
+        if(saveBtn) {
+          saveBtn.textContent = 'Simpan Rincian APBDes';
+          saveBtn.removeAttribute('disabled');
+        }
+      }
+    });
+  });
+</script>

@@ -1,0 +1,409 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Fetch all regulations from Supabase
+const { data: dbRegulasi } = await supabase
+  .from('regulasi')
+  .select('*')
+  .order('created_at', { ascending: false });
+
+const regulations = dbRegulasi || [];
+---
+
+<AdminLayout title="Kelola Regulasi - Panel Admin">
+  <div class="space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight text-foreground">Dokumen Regulasi</h1>
+        <p class="text-muted-foreground mt-1">Kelola arsip peraturan desa, Perkades, dan Surat Keputusan (SK) Kades.</p>
+      </div>
+      <button 
+        id="add-reg-btn"
+        class="inline-flex items-center justify-center rounded-xl text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 gap-2 shadow-md cursor-pointer"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+        Tambah Regulasi
+      </button>
+    </div>
+
+    <!-- Table List -->
+    <div class="bg-card border rounded-2xl shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+          <thead class="bg-muted/50 text-muted-foreground font-semibold border-b">
+            <tr>
+              <th class="px-6 py-4">Nomor & Judul Dokumen</th>
+              <th class="px-6 py-4">Jenis Regulasi</th>
+              <th class="px-6 py-4">Tanggal Terbit</th>
+              <th class="px-6 py-4">Ukuran File</th>
+              <th class="px-6 py-4 text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y" id="reg-table-body">
+            {regulations.length === 0 ? (
+              <tr>
+                <td colspan="5" class="px-6 py-8 text-center text-muted-foreground">
+                  Belum ada dokumen regulasi yang diunggah. Silakan tambah data baru.
+                </td>
+              </tr>
+            ) : (
+              regulations.map((doc) => (
+                <tr class="hover:bg-muted/30 transition-colors">
+                  <td class="px-6 py-4 font-bold text-foreground">
+                    <div class="max-w-md break-words">{doc.title}</div>
+                  </td>
+                  <td class="px-6 py-4">
+                    <span class="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold bg-secondary text-secondary-foreground">
+                      {doc.category}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 text-muted-foreground">{doc.date}</td>
+                  <td class="px-6 py-4 text-muted-foreground">{doc.size}</td>
+                  <td class="px-6 py-4 text-right whitespace-nowrap">
+                    <button 
+                      class="edit-btn text-primary hover:underline text-xs font-bold mr-3 cursor-pointer"
+                      data-id={doc.id}
+                      data-title={doc.title}
+                      data-category={doc.category}
+                      data-date={doc.date}
+                      data-size={doc.size}
+                      data-url={doc.file_url || ''}
+                    >
+                      Edit
+                    </button>
+                    <button 
+                      class="delete-btn text-destructive hover:underline text-xs font-bold cursor-pointer"
+                      data-id={doc.id}
+                      data-title={doc.title}
+                    >
+                      Hapus
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dialog Modal Form -->
+  <div id="reg-modal" class="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-card border w-full max-w-lg rounded-3xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="px-6 py-5 border-b flex justify-between items-center bg-muted/20">
+        <h3 id="modal-title" class="font-bold text-lg text-foreground">Tambah Dokumen Regulasi</h3>
+        <button id="close-modal-btn" class="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="reg-form" class="p-6 overflow-y-auto space-y-4 flex-1" novalidate>
+        <input type="hidden" id="reg-id" />
+        
+        <div class="space-y-1.5 text-left">
+          <label for="reg-title" class="text-xs font-bold text-foreground uppercase tracking-wider">Nomor & Judul Dokumen Regulasi</label>
+          <textarea 
+            id="reg-title" 
+            rows="3"
+            placeholder="Contoh: Peraturan Desa Puspamukti Nomor 1 Tahun 2026 tentang Anggaran Pendapatan dan Belanja Desa (APBDes) Tahun 2026" 
+            class="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary resize-none shadow-2xs transition-colors"
+            required
+          ></textarea>
+          <p id="reg-title-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+            <span>Nomor dan judul regulasi wajib diisi (minimal 5 huruf).</span>
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1.5 text-left">
+            <label for="reg-category" class="text-xs font-bold text-foreground uppercase tracking-wider">Jenis Regulasi</label>
+            <select 
+              id="reg-category" 
+              class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer shadow-2xs"
+              required
+            >
+              <option value="Peraturan Desa">Peraturan Desa</option>
+              <option value="Perkades">Perkades</option>
+              <option value="SK Kades">SK Kades</option>
+            </select>
+          </div>
+
+          <div class="space-y-1.5 text-left">
+            <label class="text-xs font-bold text-foreground uppercase tracking-wider">Tanggal Terbit</label>
+            <div class="grid grid-cols-3 gap-2">
+              <select id="reg-date-hari" class="flex h-11 w-full rounded-xl border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer" required>
+                <option value="" disabled selected>Hari</option>
+                {Array.from({ length: 31 }, (_, i) => (
+                  <option value={i + 1}>{i + 1}</option>
+                ))}
+              </select>
+              <select id="reg-date-bulan" class="flex h-11 w-full rounded-xl border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer" required>
+                <option value="" disabled selected>Bulan</option>
+                {['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].map(month => (
+                  <option value={month}>{month}</option>
+                ))}
+              </select>
+              <select id="reg-date-tahun" class="flex h-11 w-full rounded-xl border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer" required>
+                <option value="" disabled selected>Tahun</option>
+                {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 2 + i).map(year => (
+                  <option value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1.5 text-left">
+            <label for="reg-size" class="text-xs font-bold text-foreground uppercase tracking-wider">Ukuran & Format File</label>
+            <input 
+              type="text" 
+              id="reg-size" 
+              placeholder="Contoh: 2.4 MB (PDF)" 
+              class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs transition-colors"
+              required
+            />
+            <p id="reg-size-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+              <span>Format/ukuran file wajib diisi.</span>
+            </p>
+          </div>
+
+          <div class="space-y-1.5 text-left">
+            <label for="reg-url" class="text-xs font-bold text-foreground uppercase tracking-wider">URL Tautan Dokumen (Unduh)</label>
+            <input 
+              type="text" 
+              id="reg-url" 
+              placeholder="Contoh: https://example.com/file.pdf" 
+              class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs transition-colors"
+            />
+          </div>
+        </div>
+
+        <div class="pt-4 border-t flex justify-end gap-3">
+          <button 
+            type="button" 
+            id="cancel-modal-btn" 
+            class="inline-flex items-center justify-center rounded-xl border border-input bg-background hover:bg-accent text-sm font-bold h-11 px-4 cursor-pointer transition-colors"
+          >
+            Batal
+          </button>
+          <button 
+            type="submit" 
+            id="submit-modal-btn" 
+            class="inline-flex items-center justify-center rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold h-11 px-6 shadow-md hover:shadow-lg cursor-pointer transition-all"
+          >
+            Simpan Dokumen
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { supabase } from '../../lib/supabase';
+
+  const modal = document.getElementById('reg-modal');
+  const modalTitle = document.getElementById('modal-title');
+  const regForm = document.getElementById('reg-form') as HTMLFormElement;
+  
+  const inputId = document.getElementById('reg-id') as HTMLInputElement;
+  const inputTitle = document.getElementById('reg-title') as HTMLTextAreaElement;
+  const inputCategory = document.getElementById('reg-category') as HTMLSelectElement;
+  const selectDay = document.getElementById('reg-date-hari') as HTMLSelectElement;
+  const selectMonth = document.getElementById('reg-date-bulan') as HTMLSelectElement;
+  const selectYear = document.getElementById('reg-date-tahun') as HTMLSelectElement;
+  const inputSize = document.getElementById('reg-size') as HTMLInputElement;
+  const inputUrl = document.getElementById('reg-url') as HTMLInputElement;
+  
+  const addBtn = document.getElementById('add-reg-btn');
+  const closeModalBtn = document.getElementById('close-modal-btn');
+  const cancelModalBtn = document.getElementById('cancel-modal-btn');
+  const submitModalBtn = document.getElementById('submit-modal-btn');
+
+  // Open Modal
+  const openModal = (title: string, id = "", docTitle = "", category = "Peraturan Desa", date = "", size = "", url = "") => {
+    if (!modal) return;
+    if (modalTitle) modalTitle.innerText = title;
+    
+    inputId.value = id;
+    inputTitle.value = docTitle;
+    inputCategory.value = category;
+    
+    if (date) {
+      const parts = date.split(' ');
+      if (parts.length === 3) {
+        selectDay.value = parts[0];
+        selectMonth.value = parts[1];
+        selectYear.value = parts[2];
+      }
+    } else {
+      const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+      const d = new Date();
+      selectDay.value = d.getDate().toString();
+      selectMonth.value = months[d.getMonth()];
+      selectYear.value = d.getFullYear().toString();
+    }
+
+    inputSize.value = size;
+    inputUrl.value = url;
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  };
+
+  const titleError = document.getElementById('reg-title-error');
+  const sizeError = document.getElementById('reg-size-error');
+
+  function validateRegForm(): boolean {
+    let valid = true;
+
+    if (inputTitle.value.trim().length < 5) {
+      inputTitle.classList.add('border-destructive', 'focus-visible:ring-destructive');
+      inputTitle.classList.remove('border-input', 'focus-visible:ring-primary');
+      titleError?.classList.remove('hidden');
+      valid = false;
+    } else {
+      inputTitle.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+      inputTitle.classList.add('border-input', 'focus-visible:ring-primary');
+      titleError?.classList.add('hidden');
+    }
+
+    if (!inputSize.value.trim()) {
+      inputSize.classList.add('border-destructive', 'focus-visible:ring-destructive');
+      inputSize.classList.remove('border-input', 'focus-visible:ring-primary');
+      sizeError?.classList.remove('hidden');
+      valid = false;
+    } else {
+      inputSize.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+      inputSize.classList.add('border-input', 'focus-visible:ring-primary');
+      sizeError?.classList.add('hidden');
+    }
+
+    return valid;
+  }
+
+  inputTitle?.addEventListener('input', () => { if (!titleError?.classList.contains('hidden')) validateRegForm(); });
+  inputSize?.addEventListener('input', () => { if (!sizeError?.classList.contains('hidden')) validateRegForm(); });
+
+  // Close Modal
+  const closeModal = () => {
+    if (!modal) return;
+    modal.classList.remove('flex');
+    modal.classList.add('hidden');
+    regForm.reset();
+    titleError?.classList.add('hidden');
+    sizeError?.classList.add('hidden');
+  };
+
+  if (addBtn) addBtn.addEventListener('click', () => openModal("Tambah Dokumen Regulasi"));
+  if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+  if (cancelModalBtn) cancelModalBtn.addEventListener('click', closeModal);
+
+  // Submit Handler
+  if (regForm) {
+    regForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!validateRegForm()) return;
+
+      const id = inputId.value;
+      const title = inputTitle.value.trim();
+      const category = inputCategory.value;
+      const date = `${selectDay.value} ${selectMonth.value} ${selectYear.value}`;
+      const size = inputSize.value.trim();
+      const file_url = inputUrl.value.trim() || null;
+
+      if (submitModalBtn) {
+        submitModalBtn.innerText = "Menyimpan...";
+        submitModalBtn.setAttribute('disabled', 'true');
+      }
+
+      const payload = {
+        title,
+        category,
+        date,
+        size,
+        file_url
+      };
+
+      if (id) {
+        // Edit Mode
+        const { error } = await supabase
+          .from('regulasi')
+          .update(payload)
+          .eq('id', parseInt(id));
+
+        if (error) {
+          alert("Gagal memperbarui data: " + error.message);
+        } else {
+          window.location.reload();
+        }
+      } else {
+        // Add Mode
+        const { error } = await supabase
+          .from('regulasi')
+          .insert([payload]);
+
+        if (error) {
+          alert("Gagal menambahkan data: " + error.message);
+        } else {
+          window.location.reload();
+        }
+      }
+
+      if (submitModalBtn) {
+        submitModalBtn.innerText = "Simpan Dokumen";
+        submitModalBtn.removeAttribute('disabled');
+      }
+    });
+  }
+
+  // Edit / Delete Buttons Actions
+  document.addEventListener('DOMContentLoaded', () => {
+    // Edit Action
+    const editBtns = document.querySelectorAll('.edit-btn');
+    editBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const el = e.currentTarget as HTMLButtonElement;
+        const id = el.getAttribute('data-id') || "";
+        const title = el.getAttribute('data-title') || "";
+        const category = el.getAttribute('data-category') || "Peraturan Desa";
+        const date = el.getAttribute('data-date') || "";
+        const size = el.getAttribute('data-size') || "";
+        const url = el.getAttribute('data-url') || "";
+
+        openModal("Edit Dokumen Regulasi", id, title, category, date, size, url);
+      });
+    });
+
+    // Delete Action
+    const deleteBtns = document.querySelectorAll('.delete-btn');
+    deleteBtns.forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const el = e.currentTarget as HTMLButtonElement;
+        const id = el.getAttribute('data-id');
+        const title = el.getAttribute('data-title');
+        if (!id) return;
+
+        if (confirm(`Apakah Anda yakin ingin menghapus regulasi "${title}"?`)) {
+          const { error } = await supabase
+            .from('regulasi')
+            .delete()
+            .eq('id', parseInt(id));
+
+          if (error) {
+            alert("Gagal menghapus data: " + error.message);
+          } else {
+            alert("Dokumen regulasi berhasil dihapus!");
+            window.location.reload();
+          }
+        }
+      });
+    });
+  });
+</script>

@@ -1,0 +1,1020 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Fetch all permohonan surat from Supabase
+const { data: dbSurat } = await supabase
+  .from('permohonan_surat')
+  .select('*')
+  .order('created_at', { ascending: false });
+
+const suratList = dbSurat || [];
+---
+
+<AdminLayout title="Kelola Permohonan E-Surat">
+  <div class="space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight text-foreground">Permohonan & Layanan E-Surat</h1>
+        <p class="text-muted-foreground mt-1">Verifikasi pengajuan online dari warga, terbitkan nomor surat resmi, dan buat surat loket fisik.</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button 
+          id="btn-open-manual-surat"
+          class="inline-flex items-center justify-center rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 text-xs font-bold gap-2 shadow-md cursor-pointer"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          ➕ Buat Surat Manual (Loket Desa)
+        </button>
+        <span class="text-xs font-bold bg-primary/10 text-primary px-3 py-2 rounded-xl" id="total-badge">
+          {suratList.length} Permohonan
+        </span>
+      </div>
+    </div>
+
+    <!-- Filter Status Tabs -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-2" id="status-filter-tabs">
+      <button data-filter="all" class="filter-tab px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold whitespace-nowrap shadow-xs cursor-pointer">Semua Status</button>
+      <button data-filter="Menunggu Persetujuan" class="filter-tab px-4 py-2 rounded-xl bg-secondary text-secondary-foreground text-xs font-bold whitespace-nowrap hover:bg-secondary/80 transition-colors cursor-pointer">Menunggu Verifikasi</button>
+      <button data-filter="Disetujui" class="filter-tab px-4 py-2 rounded-xl bg-secondary text-secondary-foreground text-xs font-bold whitespace-nowrap hover:bg-secondary/80 transition-colors cursor-pointer">Disetujui</button>
+      <button data-filter="Selesai" class="filter-tab px-4 py-2 rounded-xl bg-secondary text-secondary-foreground text-xs font-bold whitespace-nowrap hover:bg-secondary/80 transition-colors cursor-pointer">Selesai</button>
+      <button data-filter="Ditolak" class="filter-tab px-4 py-2 rounded-xl bg-secondary text-secondary-foreground text-xs font-bold whitespace-nowrap hover:bg-secondary/80 transition-colors cursor-pointer">Ditolak</button>
+    </div>
+
+    <!-- Table Container -->
+    <div class="bg-card border rounded-3xl shadow-sm overflow-hidden animate-fade-in">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+          <thead class="bg-muted/50 text-muted-foreground font-semibold border-b">
+            <tr>
+              <th class="px-6 py-4">Warga / NIK</th>
+              <th class="px-6 py-4">Jenis Surat</th>
+              <th class="px-6 py-4">Keperluan</th>
+              <th class="px-6 py-4">Nomor Register Surat</th>
+              <th class="px-6 py-4">Status</th>
+              <th class="px-6 py-4 text-right">Aksi Admin</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y" id="surat-table-body">
+            {suratList.length === 0 ? (
+              <tr>
+                <td colspan="6" class="px-6 py-12 text-center text-muted-foreground">
+                  Belum ada data permohonan surat. Anda dapat membuat surat manual lewat tombol di atas.
+                </td>
+              </tr>
+            ) : (
+              suratList.map((item) => {
+                const statusColor = 
+                  item.status === 'Disetujui' ? 'bg-emerald-500/10 text-emerald-700 border-emerald-300' :
+                  item.status === 'Selesai' ? 'bg-blue-500/10 text-blue-700 border-blue-300' :
+                  item.status === 'Ditolak' ? 'bg-red-500/10 text-red-700 border-red-300' :
+                  'bg-amber-500/10 text-amber-700 border-amber-300';
+
+                return (
+                  <tr class="hover:bg-muted/30 transition-colors surat-row" data-status={item.status}>
+                    <td class="px-6 py-4">
+                      <div class="font-bold text-foreground">{item.nama}</div>
+                      <div class="text-xs text-muted-foreground font-mono">NIK: {item.nik}</div>
+                      <div class="text-[10px] text-muted-foreground">RT/RW: {item.rt_rw || '-'}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                      <span class="font-bold text-foreground block">{item.jenis_surat}</span>
+                    </td>
+                    <td class="px-6 py-4 max-w-xs">
+                      <p class="text-xs font-semibold text-foreground">{item.keperluan}</p>
+                      {item.keterangan_tambahan && (
+                        <p class="text-[11px] text-muted-foreground mt-0.5">{item.keterangan_tambahan}</p>
+                      )}
+                    </td>
+                    <td class="px-6 py-4 text-xs">
+                      {item.nomor_surat ? (
+                        <div class="font-mono font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-lg border border-primary/20 inline-block">
+                          {item.nomor_surat}
+                        </div>
+                      ) : (
+                        <span class="text-xs text-amber-600 font-semibold italic">Belum Ada Nomor</span>
+                      )}
+                      <div class="text-muted-foreground text-[10px] mt-1">
+                        {new Date(item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </div>
+                    </td>
+                    <td class="px-6 py-4">
+                      <span class={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-bold ${statusColor}`}>
+                        {item.status}
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 text-right whitespace-nowrap space-x-1.5">
+                      <button 
+                        class="btn-edit-status inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs cursor-pointer transition-all"
+                        data-id={item.id}
+                        data-nama={item.nama}
+                        data-nik={item.nik}
+                        data-rtrw={item.rt_rw || ''}
+                        data-jenis={item.jenis_surat}
+                        data-keperluan={item.keperluan}
+                        data-keterangan={item.keterangan_tambahan || ''}
+                        data-nomor={item.nomor_surat || ''}
+                        data-status={item.status}
+                        data-catatan={item.catatan_admin || ''}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                        Beri Nomor / Edit
+                      </button>
+                      <button 
+                        class="btn-print-surat inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs cursor-pointer transition-all"
+                        data-nama={item.nama}
+                        data-nik={item.nik}
+                        data-rtrw={item.rt_rw || ''}
+                        data-jenis={item.jenis_surat}
+                        data-keperluan={item.keperluan}
+                        data-keterangan={item.keterangan_tambahan || ''}
+                        data-nomor={item.nomor_surat || '470/.../Pemdes/2026'}
+                        data-tanggal={new Date(item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+                        Cetak
+                      </button>
+                      <button 
+                        class="btn-delete-surat text-destructive hover:bg-destructive/10 p-1.5 rounded-xl text-xs font-bold cursor-pointer transition-colors"
+                        data-id={item.id}
+                        data-nama={item.nama}
+                        title="Hapus Data"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 1-2h6c1 0 2 1 2 2v2"/></svg>
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 1: EDIT / VERIFIKASI & KETIK NOMOR SURAT -->
+  <div id="verifikasi-modal" class="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-card border w-full max-w-lg rounded-3xl shadow-xl overflow-hidden flex flex-col">
+      <div class="px-6 py-5 border-b flex justify-between items-center bg-muted/20">
+        <div>
+          <h3 class="font-bold text-lg text-foreground">Kelola & Terbitkan Nomor Surat</h3>
+          <p class="text-xs text-muted-foreground">Ketik nomor surat manual atau gunakan saran otomatis.</p>
+        </div>
+        <button id="close-verif-btn" class="p-1.5 rounded-xl hover:bg-muted text-muted-foreground cursor-pointer" aria-label="Tutup">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="verif-form" class="p-6 space-y-4">
+        <input type="hidden" id="verif-id" />
+        
+        <!-- Info Pemohon -->
+        <div class="bg-muted/40 p-4 rounded-2xl space-y-1.5 text-xs">
+          <div class="flex justify-between">
+            <span class="text-muted-foreground">Nama Pemohon:</span>
+            <span class="font-bold text-foreground" id="verif-nama">-</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-muted-foreground">NIK:</span>
+            <span class="font-mono font-bold text-foreground" id="verif-nik">-</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-muted-foreground">Jenis Surat:</span>
+            <span class="font-bold text-primary" id="verif-jenis">-</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-muted-foreground">Keperluan:</span>
+            <span class="font-semibold text-foreground" id="verif-keperluan">-</span>
+          </div>
+        </div>
+
+        <div class="space-y-1.5">
+          <label for="verif-status" class="text-xs font-bold text-foreground uppercase">Status Persetujuan</label>
+          <select id="verif-status" class="flex h-11 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary" required>
+            <option value="Menunggu Persetujuan">Menunggu Persetujuan</option>
+            <option value="Disetujui">Disetujui (Siap Cetak)</option>
+            <option value="Selesai">Selesai (Sudah Diterbitkan)</option>
+            <option value="Ditolak">Ditolak</option>
+          </select>
+        </div>
+
+        <!-- KOLOM INPUT NOMOR SURAT (BISA DIKETIK BEBAS) -->
+        <div class="space-y-1.5 bg-primary/5 p-3.5 rounded-2xl border border-primary/20">
+          <div class="flex items-center justify-between mb-1">
+            <label for="verif-nomor" class="text-xs font-bold text-foreground uppercase flex items-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              Nomor Register Surat Resmi (Ketik Bebas)
+            </label>
+            <button type="button" id="btn-auto-number" class="text-[11px] font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer bg-primary/10 px-2 py-0.5 rounded-lg border border-primary/30">
+              ⚡ Buat No. Otomatis
+            </button>
+          </div>
+          <input 
+            type="text" 
+            id="verif-nomor" 
+            placeholder="Contoh: 470/015/Pemdes/2026 atau sesuai buku fisik"
+            class="flex h-11 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm font-mono font-bold text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs"
+          />
+          <p class="text-[10px] text-muted-foreground">Admin bebas mengetik nomor sesuai buku register fisik kantor desa.</p>
+        </div>
+
+        <div class="space-y-1.5">
+          <label for="verif-catatan" class="text-xs font-bold text-foreground uppercase">Catatan Tambahan (Opsional)</label>
+          <textarea 
+            id="verif-catatan" 
+            rows="2"
+            placeholder="Tulis catatan jika ada berkas yang perlu dilengkapi..."
+            class="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary resize-none"
+          ></textarea>
+        </div>
+
+        <div class="pt-2 flex gap-3">
+          <button type="button" id="cancel-verif-btn" class="w-1/2 inline-flex items-center justify-center rounded-xl bg-secondary text-secondary-foreground hover:bg-secondary/80 h-11 text-xs font-bold cursor-pointer">
+            Batal
+          </button>
+          <button type="submit" id="save-verif-btn" class="w-1/2 inline-flex items-center justify-center rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 h-11 text-xs font-bold cursor-pointer shadow-md">
+            Simpan & Terbitkan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: BUAT SURAT MANUAL (LOKET FISIK BALAI DESA) -->
+  <div id="manual-surat-modal" class="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-card border w-full max-w-lg rounded-3xl shadow-xl overflow-hidden flex flex-col">
+      <div class="px-6 py-5 border-b flex justify-between items-center bg-muted/20">
+        <div>
+          <h3 class="font-bold text-lg text-foreground">Terbitkan Surat Manual (Loket Desa)</h3>
+          <p class="text-xs text-muted-foreground">Buat surat langsung untuk warga yang datang langsung ke kantor desa.</p>
+        </div>
+        <button id="close-manual-btn" class="p-1.5 rounded-xl hover:bg-muted text-muted-foreground cursor-pointer" aria-label="Tutup">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="manual-surat-form" class="p-6 space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="space-y-1.5">
+            <label for="manual-nama" class="text-xs font-bold text-foreground uppercase">Nama Pemohon</label>
+            <input type="text" id="manual-nama" placeholder="Contoh: Asep Nugraha" class="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-xs sm:text-sm" required />
+          </div>
+          <div class="space-y-1.5">
+            <label for="manual-nik" class="text-xs font-bold text-foreground uppercase">NIK (16 Digit)</label>
+            <input type="text" id="manual-nik" placeholder="3206..." maxlength="16" class="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-xs sm:text-sm font-mono" required />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="space-y-1.5">
+            <label for="manual-rtrw" class="text-xs font-bold text-foreground uppercase">RT / RW</label>
+            <input type="text" id="manual-rtrw" placeholder="01/02" class="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-xs sm:text-sm" />
+          </div>
+          <div class="space-y-1.5">
+            <label for="manual-jenis" class="text-xs font-bold text-foreground uppercase">Jenis Surat</label>
+            <select id="manual-jenis" class="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-xs sm:text-sm font-semibold" required>
+              <option value="Surat Keterangan Usaha (SKU)">Surat Keterangan Usaha (SKU)</option>
+              <option value="Surat Keterangan Tidak Mampu (SKTM)">Surat Keterangan Tidak Mampu (SKTM)</option>
+              <option value="Surat Pengantar Domisili">Surat Pengantar Domisili</option>
+              <option value="Surat Pengantar SKCK">Surat Pengantar SKCK</option>
+              <option value="Surat Keterangan Belum Menikah">Surat Keterangan Belum Menikah</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="space-y-1.5">
+          <label for="manual-keperluan" class="text-xs font-bold text-foreground uppercase">Keperluan Surat</label>
+          <input type="text" id="manual-keperluan" placeholder="Contoh: Pengajuan KUR Bank BRI" class="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-xs sm:text-sm" required />
+        </div>
+
+        <div class="space-y-1.5 bg-primary/5 p-3 rounded-xl border border-primary/20">
+          <label for="manual-nomor" class="text-xs font-bold text-foreground uppercase">Nomor Register Surat</label>
+          <input type="text" id="manual-nomor" placeholder="Contoh: 470/025/Pemdes/2026" class="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-xs sm:text-sm font-mono font-bold text-primary" required />
+        </div>
+
+        <div class="pt-2 flex gap-3">
+          <button type="button" id="cancel-manual-btn" class="w-1/2 inline-flex items-center justify-center rounded-xl bg-secondary text-secondary-foreground hover:bg-secondary/80 h-11 text-xs font-bold cursor-pointer">
+            Batal
+          </button>
+          <button type="submit" id="save-manual-btn" class="w-1/2 inline-flex items-center justify-center rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 h-11 text-xs font-bold cursor-pointer shadow-md">
+            Terbitkan Surat
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 3: PRATINJAU & CETAK SURAT RESMI (PRINTABLE A4 / F4) -->
+  <div id="print-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-start justify-center p-3 sm:p-6 overflow-y-auto">
+    <div id="print-modal-wrapper" class="w-full max-w-4xl flex flex-col my-2 sm:my-6 relative z-10 animate-fade-in">
+      
+      <!-- Toolbar Header (Pilihan Ukuran Kertas & Tombol Cetak) -->
+      <div class="bg-card text-card-foreground px-6 py-4 rounded-2xl border-2 border-primary/40 shadow-2xl flex flex-wrap justify-between items-center gap-4 mb-6 print:hidden sticky top-2 z-20">
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-extrabold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="8" x2="16" y1="10" y2="10"/></svg>
+            Ukuran Kertas:
+          </span>
+          <div class="inline-flex rounded-xl p-1 bg-muted border gap-1 shadow-inner">
+            <button id="btn-paper-a4" type="button" class="px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-blue-600 text-white shadow-sm transition-all cursor-pointer ring-2 ring-blue-400">
+              📄 A4 (210 × 297 mm)
+            </button>
+            <button id="btn-paper-f4" type="button" class="px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-transparent text-muted-foreground hover:text-foreground transition-all cursor-pointer">
+              📄 F4 / Folio (215 × 330 mm)
+            </button>
+          </div>
+          <span id="paper-status-text" class="text-[11px] font-bold text-primary bg-primary/10 px-2 py-1 rounded-md hidden sm:inline-block">Aktif: A4</span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="do-print-btn" class="inline-flex items-center justify-center rounded-xl bg-primary text-primary-foreground h-10 px-5 text-xs font-bold hover:bg-primary/90 shadow-md gap-2 cursor-pointer transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+            <span>Cetak Dokumen</span>
+          </button>
+          <button id="close-print-btn" class="p-2 rounded-xl hover:bg-muted text-muted-foreground cursor-pointer transition-colors" aria-label="Tutup">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Real Paper Container Sheet (A4 or F4) -->
+      <div class="flex justify-center overflow-x-auto pb-8">
+        <div class="paper-sheet paper-a4 rounded-lg" id="printable-letter" style="width: 210mm; min-height: 297mm; padding: 20mm;">
+          
+          <!-- Kop Surat Resmi (Double Line) -->
+          <div class="text-center pb-2 border-b-[3px] border-black">
+            <div class="flex items-center gap-4">
+              <img src="/logodesa.webp" alt="Logo Desa" class="h-24 w-auto object-contain shrink-0" />
+              <div class="flex-1 space-y-0.5 font-serif text-black">
+                <h4 class="text-base font-bold tracking-wider uppercase">Pemerintah Kabupaten Tasikmalaya</h4>
+                <h4 class="text-base font-bold tracking-wider uppercase">Kecamatan Cigalontang</h4>
+                <h3 class="text-2xl font-black tracking-widest uppercase">Pemerintah Desa Puspamukti</h3>
+                <p class="text-xs font-sans text-gray-700 mt-1">Jl. Raya Desa Puspamukti No. 1, Cigalontang, Tasikmalaya, Jawa Barat 46463</p>
+                <p class="text-[11px] font-sans text-gray-600">Email: puspamuktidesa@gmail.com | Website: desapuspamukti.id</p>
+              </div>
+            </div>
+          </div>
+          <!-- Garis Tipis Kedua Khas Kop Surat Resmi -->
+          <div class="border-b-[1px] border-black mt-[2px] mb-8"></div>
+
+          <!-- Judul Surat -->
+          <div class="text-center space-y-1.5 my-6 font-serif">
+            <h2 class="text-lg font-extrabold uppercase underline tracking-widest" id="surat-judul-cetak">SURAT KETERANGAN USAHA</h2>
+            <p class="text-xs font-sans text-gray-800 font-bold">Nomor: <span id="surat-nomor-cetak">500/001/Pemdes/2026</span></p>
+          </div>
+
+          <!-- Pembuka -->
+          <p class="text-xs font-serif text-justify leading-relaxed mt-4">
+            Yang bertanda tangan di bawah ini, Kepala Desa Puspamukti, Kecamatan Cigalontang, Kabupaten Tasikmalaya, Provinsi Jawa Barat, menerangkan dengan sebenarnya bahwa:
+          </p>
+
+          <!-- Biodata Warga (Dinamis) -->
+          <div class="pl-8 my-4 space-y-2 text-xs font-serif leading-relaxed">
+            <div class="grid grid-cols-12">
+              <span class="col-span-4 text-gray-800">1. Nama Lengkap</span>
+              <span class="col-span-8 font-bold">: <span id="surat-nama-cetak">-</span></span>
+            </div>
+            <div class="grid grid-cols-12">
+              <span class="col-span-4 text-gray-800">2. NIK (KTP)</span>
+              <span class="col-span-8 font-mono font-bold">: <span id="surat-nik-cetak">-</span></span>
+            </div>
+            <div class="grid grid-cols-12">
+              <span class="col-span-4 text-gray-800">3. Tempat, Tgl Lahir</span>
+              <span class="col-span-8">: <span id="surat-ttl-cetak">Tasikmalaya, 12 Mei 1990</span></span>
+            </div>
+            <div class="grid grid-cols-12">
+              <span class="col-span-4 text-gray-800">4. Jenis Kelamin</span>
+              <span class="col-span-8">: <span id="surat-jk-cetak">Laki-laki</span></span>
+            </div>
+            <div class="grid grid-cols-12">
+              <span class="col-span-4 text-gray-800">5. Kewarganegaraan / Agama</span>
+              <span class="col-span-8">: WNI / <span id="surat-agama-cetak">Islam</span></span>
+            </div>
+            <div class="grid grid-cols-12">
+              <span class="col-span-4 text-gray-800">6. Alamat / Tempat Tinggal</span>
+              <span class="col-span-8">: RT/RW <span id="surat-rtrw-cetak">01/02</span>, Desa Puspamukti, Kec. Cigalontang, Kab. Tasikmalaya</span>
+            </div>
+          </div>
+
+          <!-- Isi Keterangan -->
+          <div class="text-xs font-serif space-y-3 text-justify leading-relaxed mt-4">
+            <p>
+              Nama yang tercantum di atas adalah benar-benar warga penduduk yang berdomisili dan tercatat dalam register kependudukan Desa Puspamukti, Kecamatan Cigalontang, Kabupaten Tasikmalaya.
+            </p>
+            <p>
+              Berdasarkan permohonan yang bersangkutan, surat keterangan ini dikeluarkan secara resmi untuk keperluan:
+            </p>
+            <div class="bg-gray-50 border border-gray-300 p-3 rounded-lg text-center font-bold text-gray-900 my-2 font-sans text-xs">
+              "<span id="surat-keperluan-cetak">-</span>"
+            </div>
+            <p>
+              Demikian surat keterangan ini kami berikan kepada yang bersangkutan agar dapat dipergunakan sebagaimana mestinya dan pihak yang berkepentingan menjadi maklum.
+            </p>
+          </div>
+
+          <!-- Tanda Tangan & QR Code Verifikasi (Bagian Bawah Kertas) -->
+          <div class="mt-12 pt-4 flex justify-between items-end font-serif">
+            <!-- QR Code Verifikasi Digital E-Gov (Aktif & Bisa Di-scan) -->
+            <a id="qr-link-cetak" href="/verifikasi" target="_blank" class="text-center space-y-1 block group cursor-pointer" title="Scan atau Klik untuk Memverifikasi Keaslian Surat">
+              <div class="w-24 h-24 border-2 border-black p-1 mx-auto flex items-center justify-center bg-white shadow-xs">
+                <img id="qr-image-cetak" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https%3A%2F%2Fdesapuspamukti.id%2Fverifikasi" alt="QR Code Verifikasi" class="w-full h-full object-contain" />
+              </div>
+              <p class="text-[9px] font-sans font-bold text-gray-700 uppercase tracking-wider group-hover:text-primary transition-colors">Verifikasi Digital E-Gov</p>
+              <p class="text-[8px] font-sans text-gray-500">Scan QR / Klik Disini</p>
+            </a>
+
+            <!-- Tanda Tangan Kepala Desa -->
+            <div class="text-center space-y-16">
+              <div class="space-y-0.5 text-xs">
+                <p>Puspamukti, <span id="surat-tgl-cetak">01 September 2026</span></p>
+                <p class="font-bold uppercase tracking-wider">Kepala Desa Puspamukti,</p>
+              </div>
+              <div class="space-y-0.5 text-xs">
+                <p class="font-bold underline uppercase tracking-widest">ATANG RIDWAN</p>
+                <p class="text-[10px] text-gray-700 font-sans">NIP. -</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <style id="print-page-style" is:global>
+    @page {
+      size: A4 portrait;
+      margin: 15mm 20mm 15mm 20mm;
+    }
+  </style>
+
+  <style is:global>
+    .paper-sheet {
+      background: white !important;
+      color: black !important;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+      box-sizing: border-box;
+      transition: all 0.2s ease;
+    }
+
+    .paper-a4 {
+      width: 210mm !important;
+      min-height: 297mm !important;
+      padding: 20mm 20mm 20mm 20mm !important;
+    }
+
+    .paper-f4 {
+      width: 215mm !important;
+      min-height: 330mm !important;
+      padding: 20mm 20mm 20mm 20mm !important;
+    }
+
+    @media (max-width: 768px) {
+      .paper-sheet {
+        width: 100% !important;
+        min-height: auto !important;
+        padding: 16px !important;
+      }
+    }
+
+    @media print {
+      body {
+        background: white !important;
+        color: black !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      body * {
+        visibility: hidden;
+      }
+
+      #print-modal, #warga-print-modal {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: block !important;
+        overflow: visible !important;
+      }
+
+      #print-modal-wrapper, #warga-print-modal-wrapper {
+        box-shadow: none !important;
+        border: none !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+
+      .paper-sheet, .paper-sheet * {
+        visibility: visible;
+      }
+
+      .paper-sheet {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+
+      .print\:hidden {
+        display: none !important;
+      }
+    }
+  </style>
+</AdminLayout>
+
+<script>
+  import { supabase } from '../../lib/supabase';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // 1. Status Filter Tabs
+    const filterTabs = document.querySelectorAll('.filter-tab');
+    const rows = document.querySelectorAll('.surat-row');
+
+    filterTabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const filter = tab.getAttribute('data-filter') || 'all';
+
+        filterTabs.forEach(t => {
+          t.className = 'filter-tab px-4 py-2 rounded-xl bg-secondary text-secondary-foreground text-xs font-bold whitespace-nowrap hover:bg-secondary/80 transition-colors cursor-pointer';
+        });
+        tab.className = 'filter-tab px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold whitespace-nowrap shadow-xs cursor-pointer';
+
+        rows.forEach((row) => {
+          const status = row.getAttribute('data-status') || '';
+          if (filter === 'all' || status === filter) {
+            (row as HTMLElement).style.display = '';
+          } else {
+            (row as HTMLElement).style.display = 'none';
+          }
+        });
+      });
+    });
+
+    // 2. Local Storage Helpers
+    const getLocalSuratList = () => {
+      try {
+        const saved = localStorage.getItem('puspamukti_permohonan_surat');
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+      return [];
+    };
+
+    const saveLocalSuratList = (list: any[]) => {
+      localStorage.setItem('puspamukti_permohonan_surat', JSON.stringify(list));
+    };
+
+    // Client-side render local records if table is empty or offline
+    const syncLocalToTable = () => {
+      const localList = getLocalSuratList();
+      const tbody = document.getElementById('surat-table-body');
+      if (!tbody || localList.length === 0) return;
+
+      if (tbody.children.length === 1 && tbody.textContent?.includes('Belum ada')) {
+        tbody.innerHTML = localList.map((item: any) => {
+          const statusColor = 
+            item.status === 'Disetujui' ? 'bg-emerald-500/10 text-emerald-700 border-emerald-300' :
+            item.status === 'Selesai' ? 'bg-blue-500/10 text-blue-700 border-blue-300' :
+            item.status === 'Ditolak' ? 'bg-red-500/10 text-red-700 border-red-300' :
+            'bg-amber-500/10 text-amber-700 border-amber-300';
+
+          return `
+            <tr class="hover:bg-muted/30 transition-colors surat-row" data-status="${item.status}">
+              <td class="px-6 py-4">
+                <div class="font-bold text-foreground">${item.nama}</div>
+                <div class="text-xs text-muted-foreground font-mono">NIK: ${item.nik}</div>
+                <div class="text-[10px] text-muted-foreground">RT/RW: ${item.rt_rw || '-'}</div>
+              </td>
+              <td class="px-6 py-4">
+                <span class="font-bold text-foreground block">${item.jenis_surat}</span>
+              </td>
+              <td class="px-6 py-4 max-w-xs">
+                <p class="text-xs font-semibold text-foreground">${item.keperluan}</p>
+                ${item.keterangan_tambahan ? `<p class="text-[11px] text-muted-foreground mt-0.5">${item.keterangan_tambahan}</p>` : ''}
+              </td>
+              <td class="px-6 py-4 text-xs">
+                ${item.nomor_surat ? `
+                  <div class="font-mono font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-lg border border-primary/20 inline-block">
+                    ${item.nomor_surat}
+                  </div>
+                ` : `<span class="text-xs text-amber-600 font-semibold italic">Belum Ada Nomor</span>`}
+                <div class="text-muted-foreground text-[10px] mt-1">
+                  ${new Date(item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <span class="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-bold ${statusColor}">
+                  ${item.status}
+                </span>
+              </td>
+              <td class="px-6 py-4 text-right whitespace-nowrap space-x-1.5">
+                <button 
+                  class="btn-edit-status inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs cursor-pointer transition-all"
+                  data-id="${item.id}"
+                  data-nama="${item.nama}"
+                  data-nik="${item.nik}"
+                  data-rtrw="${item.rt_rw || ''}"
+                  data-jenis="${item.jenis_surat}"
+                  data-keperluan="${item.keperluan}"
+                  data-keterangan="${item.keterangan_tambahan || ''}"
+                  data-nomor="${item.nomor_surat || ''}"
+                  data-status="${item.status}"
+                  data-catatan="${item.catatan_admin || ''}"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                  Beri Nomor / Edit
+                </button>
+                <button 
+                  class="btn-print-surat inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs cursor-pointer transition-all"
+                  data-nama="${item.nama}"
+                  data-nik="${item.nik}"
+                  data-rtrw="${item.rt_rw || ''}"
+                  data-jenis="${item.jenis_surat}"
+                  data-keperluan="${item.keperluan}"
+                  data-keterangan="${item.keterangan_tambahan || ''}"
+                  data-nomor="${item.nomor_surat || '470/.../Pemdes/2026'}"
+                  data-tanggal="${new Date(item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+                  Cetak
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+        bindRowButtons();
+      }
+    };
+
+    // 3. Verifikasi & Edit Modal Logic
+    const verifModal = document.getElementById('verifikasi-modal');
+    const closeVerifBtn = document.getElementById('close-verif-btn');
+    const cancelVerifBtn = document.getElementById('cancel-verif-btn');
+    const verifForm = document.getElementById('verif-form');
+
+    const idInput = document.getElementById('verif-id') as HTMLInputElement;
+    const namaSpan = document.getElementById('verif-nama');
+    const nikSpan = document.getElementById('verif-nik');
+    const jenisSpan = document.getElementById('verif-jenis');
+    const keperluanSpan = document.getElementById('verif-keperluan');
+    const statusSelect = document.getElementById('verif-status') as HTMLSelectElement;
+    const nomorInput = document.getElementById('verif-nomor') as HTMLInputElement;
+    const catatanInput = document.getElementById('verif-catatan') as HTMLTextAreaElement;
+    const saveVerifBtn = document.getElementById('save-verif-btn');
+
+    const bindRowButtons = () => {
+      document.querySelectorAll('.btn-edit-status').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id') || '';
+          const nama = btn.getAttribute('data-nama') || '';
+          const nik = btn.getAttribute('data-nik') || '';
+          const jenis = btn.getAttribute('data-jenis') || '';
+          const keperluan = btn.getAttribute('data-keperluan') || '';
+          const status = btn.getAttribute('data-status') || 'Menunggu Persetujuan';
+          const nomor = btn.getAttribute('data-nomor') || '';
+          const catatan = btn.getAttribute('data-catatan') || '';
+
+          if (idInput) idInput.value = id;
+          if (namaSpan) namaSpan.textContent = nama;
+          if (nikSpan) nikSpan.textContent = nik;
+          if (jenisSpan) jenisSpan.textContent = jenis;
+          if (keperluanSpan) keperluanSpan.textContent = keperluan;
+          if (statusSelect) statusSelect.value = status;
+          if (nomorInput) nomorInput.value = nomor;
+          if (catatanInput) catatanInput.value = catatan;
+
+          verifModal?.classList.remove('hidden');
+          verifModal?.classList.add('flex');
+
+          // If no number, suggest auto number
+          if (!nomor) {
+            generateNomorSurat();
+          }
+        });
+      });
+
+      document.querySelectorAll('.btn-print-surat').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const nama = btn.getAttribute('data-nama') || '';
+          const nik = btn.getAttribute('data-nik') || '';
+          const rtrw = btn.getAttribute('data-rtrw') || '-';
+          const jenis = btn.getAttribute('data-jenis') || 'SURAT KETERANGAN';
+          const keperluan = btn.getAttribute('data-keperluan') || '-';
+          const nomor = btn.getAttribute('data-nomor') || '470/.../Pemdes/2026';
+          const tanggal = btn.getAttribute('data-tanggal') || new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+          const isFemale = nama.toLowerCase().includes('siti') || 
+                           nama.toLowerCase().includes('aminah') || 
+                           nama.toLowerCase().includes('dewi') || 
+                           nama.toLowerCase().includes('putri') || 
+                           nama.toLowerCase().includes('ibu') || 
+                           nama.toLowerCase().includes('ratna') || 
+                           nama.toLowerCase().includes('via') || 
+                           nama.toLowerCase().includes('destri') || 
+                           nama.toLowerCase().includes('diffa') || 
+                           nama.toLowerCase().includes('linda');
+
+          const jk = btn.getAttribute('data-jk') || (isFemale ? 'Perempuan' : 'Laki-laki');
+          const ttl = btn.getAttribute('data-ttl') || (isFemale ? 'Tasikmalaya, 14 April 1995' : 'Tasikmalaya, 12 Mei 1990');
+          const agama = btn.getAttribute('data-agama') || 'Islam';
+
+          const suratJudulCetak = document.getElementById('surat-judul-cetak');
+          const suratNomorCetak = document.getElementById('surat-nomor-cetak');
+          const suratNamaCetak = document.getElementById('surat-nama-cetak');
+          const suratNikCetak = document.getElementById('surat-nik-cetak');
+          const suratRtrwCetak = document.getElementById('surat-rtrw-cetak');
+          const suratTtlCetak = document.getElementById('surat-ttl-cetak');
+          const suratJkCetak = document.getElementById('surat-jk-cetak');
+          const suratAgamaCetak = document.getElementById('surat-agama-cetak');
+          const suratKeperluanCetak = document.getElementById('surat-keperluan-cetak');
+          const suratTglCetak = document.getElementById('surat-tgl-cetak');
+          const qrImageCetak = document.getElementById('qr-image-cetak') as HTMLImageElement;
+          const qrLinkCetak = document.getElementById('qr-link-cetak') as HTMLAnchorElement;
+
+          if (suratJudulCetak) suratJudulCetak.textContent = jenis.toUpperCase();
+          if (suratNomorCetak) suratNomorCetak.textContent = nomor;
+          if (suratNamaCetak) suratNamaCetak.textContent = nama;
+          if (suratNikCetak) suratNikCetak.textContent = nik;
+          if (suratRtrwCetak) suratRtrwCetak.textContent = rtrw;
+          if (suratTtlCetak) suratTtlCetak.textContent = ttl;
+          if (suratJkCetak) suratJkCetak.textContent = jk;
+          if (suratAgamaCetak) suratAgamaCetak.textContent = agama;
+          if (suratKeperluanCetak) suratKeperluanCetak.textContent = keperluan;
+          if (suratTglCetak) suratTglCetak.textContent = tanggal;
+
+          // Dynamic QR Code link to /verifikasi
+          const targetVerifUrl = `${window.location.origin}/verifikasi?nomor=${encodeURIComponent(nomor)}`;
+          if (qrImageCetak) {
+            qrImageCetak.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(targetVerifUrl)}`;
+          }
+          if (qrLinkCetak) {
+            qrLinkCetak.href = targetVerifUrl;
+          }
+
+          const printModal = document.getElementById('print-modal');
+          printModal?.classList.remove('hidden');
+          printModal?.classList.add('flex');
+        });
+      });
+
+      document.querySelectorAll('.btn-delete-surat').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-id');
+          const nama = btn.getAttribute('data-nama');
+
+          if (!confirm(`Hapus permohonan surat dari "${nama}"?`)) return;
+
+          // Remove from local cache
+          const localList = getLocalSuratList();
+          const filtered = localList.filter((item: any) => String(item.id) !== String(id));
+          saveLocalSuratList(filtered);
+
+          try {
+            await supabase
+              .from('permohonan_surat')
+              .delete()
+              .eq('id', parseInt(id || '0'));
+          } catch (err) {}
+
+          alert('✅ Permohonan surat berhasil dihapus.');
+          window.location.reload();
+        });
+      });
+    };
+
+    const generateNomorSurat = async () => {
+      const jenis = jenisSpan?.textContent || '';
+      let kode = '470';
+      if (jenis.includes('Usaha') || jenis.includes('SKU')) {
+        kode = '500';
+      }
+
+      const year = new Date().getFullYear();
+      let count = 0;
+      try {
+        const { count: c } = await supabase
+          .from('permohonan_surat')
+          .select('*', { count: 'exact', head: true })
+          .not('nomor_surat', 'is', null);
+        count = c || 0;
+      } catch {
+        count = getLocalSuratList().filter((s: any) => !!s.nomor_surat).length;
+      }
+
+      const nextNum = String(count + 1).padStart(3, '0');
+      if (nomorInput) {
+        nomorInput.value = `${kode}/${nextNum}/Pemdes/${year}`;
+      }
+    };
+
+    document.getElementById('btn-auto-number')?.addEventListener('click', generateNomorSurat);
+
+    statusSelect?.addEventListener('change', () => {
+      if (statusSelect.value === 'Disetujui' && (!nomorInput.value || nomorInput.value.trim() === '')) {
+        generateNomorSurat();
+      }
+    });
+
+    const closeVerif = () => {
+      verifModal?.classList.remove('flex');
+      verifModal?.classList.add('hidden');
+    };
+
+    closeVerifBtn?.addEventListener('click', closeVerif);
+    cancelVerifBtn?.addEventListener('click', closeVerif);
+
+    verifForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = idInput?.value;
+      const status = statusSelect?.value;
+      const nomor_surat = nomorInput?.value.trim() || null;
+      const catatan_admin = catatanInput?.value.trim() || null;
+
+      if (!id) return;
+
+      if (saveVerifBtn) {
+        saveVerifBtn.textContent = 'Menyimpan...';
+        saveVerifBtn.setAttribute('disabled', 'true');
+      }
+
+      // Update local storage record
+      const localList = getLocalSuratList();
+      const itemIdx = localList.findIndex((item: any) => String(item.id) === String(id));
+      if (itemIdx >= 0) {
+        localList[itemIdx].status = status;
+        localList[itemIdx].nomor_surat = nomor_surat;
+        localList[itemIdx].catatan_admin = catatan_admin;
+        saveLocalSuratList(localList);
+      }
+
+      try {
+        await supabase
+          .from('permohonan_surat')
+          .update({
+            status,
+            nomor_surat,
+            catatan_admin,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', parseInt(id));
+      } catch (err: any) {
+        console.warn('Supabase notice (saved in local):', err);
+      }
+
+      alert('✅ Status dan Nomor Surat berhasil disimpan!');
+      window.location.reload();
+    });
+
+    // 4. Modal Buat Surat Manual (Loket Desa)
+    const manualModal = document.getElementById('manual-surat-modal');
+    const openManualBtn = document.getElementById('btn-open-manual-surat');
+    const closeManualBtn = document.getElementById('close-manual-btn');
+    const cancelManualBtn = document.getElementById('cancel-manual-btn');
+    const manualForm = document.getElementById('manual-surat-form');
+
+    openManualBtn?.addEventListener('click', () => {
+      const year = new Date().getFullYear();
+      const numInput = document.getElementById('manual-nomor') as HTMLInputElement;
+      if (numInput && !numInput.value) {
+        const count = getLocalSuratList().filter((s: any) => !!s.nomor_surat).length;
+        numInput.value = `470/${String(count + 1).padStart(3, '0')}/Pemdes/${year}`;
+      }
+
+      manualModal?.classList.remove('hidden');
+      manualModal?.classList.add('flex');
+    });
+
+    const closeManual = () => {
+      manualModal?.classList.remove('flex');
+      manualModal?.classList.add('hidden');
+      if (manualForm) (manualForm as HTMLFormElement).reset();
+    };
+
+    closeManualBtn?.addEventListener('click', closeManual);
+    cancelManualBtn?.addEventListener('click', closeManual);
+
+    manualForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nama = (document.getElementById('manual-nama') as HTMLInputElement)?.value.trim();
+      const nik = (document.getElementById('manual-nik') as HTMLInputElement)?.value.trim();
+      const rt_rw = (document.getElementById('manual-rtrw') as HTMLInputElement)?.value.trim() || '-';
+      const jenis_surat = (document.getElementById('manual-jenis') as HTMLSelectElement)?.value;
+      const keperluan = (document.getElementById('manual-keperluan') as HTMLInputElement)?.value.trim();
+      const nomor_surat = (document.getElementById('manual-nomor') as HTMLInputElement)?.value.trim();
+
+      if (!nama || !nik || !jenis_surat || !keperluan || !nomor_surat) return;
+
+      const newRecord = {
+        id: Date.now(),
+        nik,
+        nama,
+        rt_rw,
+        jenis_surat,
+        keperluan,
+        nomor_surat,
+        status: 'Disetujui',
+        catatan_admin: 'Diterbitkan langsung di loket balai desa.',
+        created_at: new Date().toISOString()
+      };
+
+      const localList = getLocalSuratList();
+      localList.unshift(newRecord);
+      saveLocalSuratList(localList);
+
+      try {
+        await supabase
+          .from('permohonan_surat')
+          .insert([newRecord]);
+      } catch (err) {}
+
+      alert('✅ Surat manual berhasil diterbitkan & siap dicetak!');
+      closeManual();
+      window.location.reload();
+    });
+
+    // 5. Print Modal Handler & Paper Size Switcher
+    const printModal = document.getElementById('print-modal');
+    const closePrintBtn = document.getElementById('close-print-btn');
+    const doPrintBtn = document.getElementById('do-print-btn');
+    const btnPaperA4 = document.getElementById('btn-paper-a4');
+    const btnPaperF4 = document.getElementById('btn-paper-f4');
+    const printableLetter = document.getElementById('printable-letter');
+    const printStyleEl = document.getElementById('print-page-style');
+
+    const setPaperSize = (size: 'A4' | 'F4') => {
+      const pLetter = document.getElementById('printable-letter');
+      const pStyle = document.getElementById('print-page-style');
+      const bA4 = document.getElementById('btn-paper-a4');
+      const bF4 = document.getElementById('btn-paper-f4');
+      const statusText = document.getElementById('paper-status-text');
+
+      if (!pLetter || !bA4 || !bF4) return;
+
+      if (size === 'F4') {
+        pLetter.style.setProperty('width', '215mm', 'important');
+        pLetter.style.setProperty('min-height', '330mm', 'important');
+        pLetter.style.setProperty('padding', '20mm', 'important');
+        if (pStyle) {
+          pStyle.innerHTML = `@page { size: 215mm 330mm; margin: 15mm 15mm 15mm 15mm; }`;
+        }
+        bF4.className = 'px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-blue-600 text-white shadow-sm transition-all cursor-pointer ring-2 ring-blue-400';
+        bA4.className = 'px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-transparent text-muted-foreground hover:text-foreground transition-all cursor-pointer';
+        if (statusText) statusText.textContent = 'Aktif: F4 / Folio (215 × 330 mm)';
+      } else {
+        pLetter.style.setProperty('width', '210mm', 'important');
+        pLetter.style.setProperty('min-height', '297mm', 'important');
+        pLetter.style.setProperty('padding', '20mm', 'important');
+        if (pStyle) {
+          pStyle.innerHTML = `@page { size: A4 portrait; margin: 15mm 20mm 15mm 20mm; }`;
+        }
+        bA4.className = 'px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-blue-600 text-white shadow-sm transition-all cursor-pointer ring-2 ring-blue-400';
+        bF4.className = 'px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-transparent text-muted-foreground hover:text-foreground transition-all cursor-pointer';
+        if (statusText) statusText.textContent = 'Aktif: A4 (210 × 297 mm)';
+      }
+    };
+
+    btnPaperA4?.addEventListener('click', (e) => {
+      e.preventDefault();
+      setPaperSize('A4');
+    });
+
+    btnPaperF4?.addEventListener('click', (e) => {
+      e.preventDefault();
+      setPaperSize('F4');
+    });
+
+    closePrintBtn?.addEventListener('click', () => {
+      printModal?.classList.remove('flex');
+      printModal?.classList.add('hidden');
+    });
+
+    doPrintBtn?.addEventListener('click', () => {
+      window.print();
+    });
+
+    // Initialize
+    syncLocalToTable();
+    bindRowButtons();
+
+    // Escape listener
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeVerif();
+        closeManual();
+        printModal?.classList.remove('flex');
+        printModal?.classList.add('hidden');
+      }
+    });
+  });
+</script>

@@ -1,0 +1,572 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Fetch all markers from Supabase
+const { data: dbLokasi } = await supabase
+  .from('peta_lokasi')
+  .select('*')
+  .order('created_at', { ascending: true });
+
+const lokasiList = dbLokasi || [];
+
+// Separate Kantor Desa from other pins
+const kadesPin = lokasiList.find(l => l.tipe === 'Kantor Desa') || {
+  id: "",
+  nama: "Kantor Desa Puspamukti",
+  tipe: "Kantor Desa",
+  lat: "",
+  lng: "",
+  deskripsi: "Pusat pelayanan administratif desa Puspamukti."
+};
+
+const lokasiLain = lokasiList.filter(l => l.tipe !== 'Kantor Desa');
+---
+
+<AdminLayout title="Kelola Pin Lokasi Peta">
+  <div class="space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight text-foreground">Kelola Lokasi Peta</h1>
+        <p class="text-muted-foreground mt-1">Atur koordinat pin peta Kantor Desa, kelola penanda fasilitas umum, dan unggah batas wilayah.</p>
+      </div>
+      <button 
+        id="add-pin-btn"
+        class="inline-flex items-center justify-center rounded-xl text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 gap-2 shadow-md cursor-pointer"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+        Tambah Pin Baru
+      </button>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in">
+      
+      <!-- Left Column: Kantor Desa Pin & GeoJSON boundary -->
+      <div class="space-y-6">
+        
+        <!-- Kantor Desa Coordinator -->
+        <form id="kades-pin-form" class="bg-card border rounded-3xl p-6 shadow-sm space-y-6">
+          <input type="hidden" id="kades-id" value={kadesPin.id || ""} />
+          <div>
+            <h3 class="font-bold text-lg text-foreground flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
+              Kantor Desa Puspamukti
+            </h3>
+            <p class="text-xs text-muted-foreground mt-1 leading-relaxed">Pin utama ini bersifat unik. Anda tidak bisa menambahkan duplikat, hanya diperbolehkan memperbarui koordinatnya.</p>
+          </div>
+          
+          <div class="space-y-4">
+            <div class="space-y-2">
+              <label for="kades-lat" class="text-xs font-bold text-foreground">Latitude Kantor Desa</label>
+              <input 
+                type="text" 
+                id="kades-lat" 
+                value={kadesPin.lat} 
+                placeholder="Contoh: -7.355"
+                class="flex h-11 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                required
+              />
+            </div>
+            <div class="space-y-2">
+              <label for="kades-lng" class="text-xs font-bold text-foreground">Longitude Kantor Desa</label>
+              <input 
+                type="text" 
+                id="kades-lng" 
+                value={kadesPin.lng} 
+                placeholder="Contoh: 108.016"
+                class="flex h-11 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                required
+              />
+            </div>
+            <button 
+              type="submit"
+              id="kades-submit-btn"
+              class="w-full inline-flex items-center justify-center rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 h-11 transition-colors shadow-md cursor-pointer"
+            >
+              Update Koordinat Kantor Desa
+            </button>
+          </div>
+        </form>
+
+        <!-- GeoJSON Boundary Uploader -->
+        <div class="bg-card border rounded-3xl p-6 shadow-sm space-y-4">
+          <div>
+            <h3 class="font-bold text-lg text-foreground flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Batas Wilayah (GeoJSON)
+            </h3>
+            <p class="text-xs text-muted-foreground mt-1 leading-relaxed">
+              Unggah berkas koordinat batas wilayah resmi (.geojson) agar peta publik menampilkan garis batas administrasi secara otomatis.
+            </p>
+          </div>
+          
+          <div class="space-y-3">
+            <div class="border-2 border-dashed border-muted rounded-2xl p-4 text-center hover:border-primary/50 transition-colors relative">
+              <input 
+                type="file" 
+                id="geojson-file-input" 
+                accept=".geojson,.json" 
+                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
+              <div class="space-y-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-muted-foreground"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <p class="text-xs font-bold text-foreground text-ellipsis overflow-hidden whitespace-nowrap px-2" id="geojson-file-name">Pilih atau Seret Berkas</p>
+                <p class="text-[10px] text-muted-foreground">Format file wajib .geojson atau .json</p>
+              </div>
+            </div>
+            
+            <button 
+              type="button" 
+              id="upload-geojson-btn"
+              class="w-full inline-flex items-center justify-center rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 h-11 transition-colors shadow-md cursor-pointer"
+              disabled
+            >
+              Simpan Berkas Batas Wilayah
+            </button>
+            
+            <button 
+              type="button" 
+              id="delete-geojson-btn"
+              class="w-full inline-flex items-center justify-center rounded-xl text-xs font-bold border border-input hover:bg-accent text-destructive h-9 transition-colors cursor-pointer"
+            >
+              Hapus Batas Wilayah
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Column: Other Pins Table -->
+      <div class="lg:col-span-2">
+        <div class="bg-card border rounded-3xl shadow-sm overflow-hidden">
+          <div class="px-6 py-5 border-b bg-muted/20">
+            <h3 class="font-bold text-lg text-foreground">Daftar Penanda Fasilitas & Wisata</h3>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="bg-muted/50 text-muted-foreground font-semibold border-b">
+                <tr>
+                  <th class="px-6 py-4">Nama Penanda</th>
+                  <th class="px-6 py-4">Tipe Fasilitas</th>
+                  <th class="px-6 py-4">Koordinat (Lat, Lng)</th>
+                  <th class="px-6 py-4 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y" id="pin-table-body">
+                {lokasiLain.length === 0 ? (
+                  <tr>
+                    <td colspan="4" class="px-6 py-8 text-center text-muted-foreground">
+                      Belum ada penanda fasilitas umum lainnya. Silakan tambah data baru.
+                    </td>
+                  </tr>
+                ) : (
+                  lokasiLain.map((item) => (
+                    <tr class="hover:bg-muted/30 transition-colors">
+                      <td class="px-6 py-4 font-bold text-foreground">
+                        <div class="font-bold">{item.nama}</div>
+                        <div class="text-[10px] text-muted-foreground font-normal mt-0.5">{item.deskripsi}</div>
+                      </td>
+                      <td class="px-6 py-4">
+                        <span class={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold ${
+                          item.tipe === 'Pendidikan' ? 'bg-blue-500/10 text-blue-600 border-blue-500/20' :
+                          item.tipe === 'Kesehatan' ? 'bg-teal-500/10 text-teal-600 border-teal-500/20' :
+                          item.tipe === 'Pariwisata' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
+                          'bg-amber-500/10 text-amber-600 border-amber-500/20'
+                        }`}>
+                          {item.tipe}
+                        </span>
+                      </td>
+                      <td class="px-6 py-4 font-mono text-xs text-muted-foreground">
+                        {item.lat}, {item.lng}
+                      </td>
+                      <td class="px-6 py-4 text-right whitespace-nowrap">
+                        <button 
+                          class="edit-pin-btn text-primary hover:underline text-xs font-bold mr-3 cursor-pointer"
+                          data-id={item.id}
+                          data-nama={item.nama}
+                          data-tipe={item.tipe}
+                          data-lat={item.lat}
+                          data-lng={item.lng}
+                          data-deskripsi={item.deskripsi || ''}
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          class="delete-pin-btn text-destructive hover:underline text-xs font-bold cursor-pointer"
+                          data-id={item.id}
+                          data-nama={item.nama}
+                        >
+                          Hapus
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Form Modal (Add/Edit) -->
+  <div id="pin-modal" class="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-card border w-full max-w-md rounded-3xl shadow-xl overflow-hidden flex flex-col">
+      <div class="px-6 py-5 border-b flex justify-between items-center bg-muted/20">
+        <h3 id="modal-title" class="font-bold text-lg text-foreground">Tambah Penanda Peta</h3>
+        <button id="close-modal-btn" class="p-1.5 rounded-lg hover:bg-muted text-muted-foreground">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="pin-form" class="p-6 space-y-4">
+        <input type="hidden" id="pin-id" />
+        
+        <div class="space-y-1.5">
+          <label for="pin-nama" class="text-xs font-bold text-foreground uppercase">Nama Penanda Peta</label>
+          <input 
+            type="text" 
+            id="pin-nama" 
+            placeholder="Contoh: SDN Puspamukti" 
+            class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+            required
+          />
+        </div>
+
+        <div class="space-y-1.5">
+          <label for="pin-tipe" class="text-xs font-bold text-foreground uppercase">Tipe Penanda</label>
+          <select 
+            id="pin-tipe" 
+            class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+            required
+          >
+            <option value="Pendidikan">Pendidikan</option>
+            <option value="Kesehatan">Kesehatan</option>
+            <option value="Pariwisata">Pariwisata</option>
+            <option value="Lainnya">Lainnya</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1.5">
+            <label for="pin-lat" class="text-xs font-bold text-foreground uppercase">Latitude (Lintang)</label>
+            <input 
+              type="text" 
+              id="pin-lat" 
+              placeholder="Contoh: -7.358" 
+              class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+              required
+            />
+          </div>
+
+          <div class="space-y-1.5">
+            <label for="pin-lng" class="text-xs font-bold text-foreground uppercase">Longitude (Bujur)</label>
+            <input 
+              type="text" 
+              id="pin-lng" 
+              placeholder="Contoh: 108.022" 
+              class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="space-y-1.5">
+          <label for="pin-deskripsi" class="text-xs font-bold text-foreground uppercase">Keterangan / Deskripsi Singkat</label>
+          <input 
+            type="text" 
+            id="pin-deskripsi" 
+            placeholder="Contoh: Fasilitas Pendidikan Utama Desa." 
+            class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+          />
+        </div>
+
+        <div class="pt-4 border-t flex justify-end gap-3">
+          <button 
+            type="button" 
+            id="cancel-modal-btn" 
+            class="inline-flex items-center justify-center rounded-xl border border-input bg-background hover:bg-accent text-sm font-bold h-11 px-4 cursor-pointer"
+          >
+            Batal
+          </button>
+          <button 
+            type="submit" 
+            id="submit-modal-btn" 
+            class="inline-flex items-center justify-center rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold h-11 px-6 shadow-md cursor-pointer"
+          >
+            Simpan Penanda
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { supabase } from '../../lib/supabase';
+
+  // --- 1. KANTOR DESA PIN SUBMIT ---
+  const kadesForm = document.getElementById('kades-pin-form');
+  const kadesSubmitBtn = document.getElementById('kades-submit-btn');
+  const inputKadesId = document.getElementById('kades-id') as HTMLInputElement;
+  const inputKadesLat = document.getElementById('kades-lat') as HTMLInputElement;
+  const inputKadesLng = document.getElementById('kades-lng') as HTMLInputElement;
+
+  if (kadesForm) {
+    kadesForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const id = inputKadesId.value;
+      const lat = inputKadesLat.value;
+      const lng = inputKadesLng.value;
+
+      if (kadesSubmitBtn) {
+        kadesSubmitBtn.innerText = "Menyimpan...";
+        kadesSubmitBtn.setAttribute('disabled', 'true');
+      }
+
+      const payload = {
+        nama: "Kantor Desa Puspamukti",
+        tipe: "Kantor Desa",
+        lat,
+        lng,
+        deskripsi: "Pusat pelayanan administratif desa Puspamukti."
+      };
+
+      let error;
+      if (id) {
+        // Update
+        const res = await supabase
+          .from('peta_lokasi')
+          .update(payload)
+          .eq('id', parseInt(id));
+        error = res.error;
+      } else {
+        // Insert
+        const res = await supabase
+          .from('peta_lokasi')
+          .insert([payload]);
+        error = res.error;
+      }
+
+      if (error) {
+        alert("Gagal memperbarui koordinat: " + error.message);
+      } else {
+        alert("Koordinat Kantor Desa berhasil diperbarui!");
+        window.location.reload();
+      }
+
+      if (kadesSubmitBtn) {
+        kadesSubmitBtn.innerText = "Update Koordinat Kantor Desa";
+        kadesSubmitBtn.removeAttribute('disabled');
+      }
+    });
+  }
+
+  // --- 2. GEOJSON BOUNDARY UPLOAD ---
+  const fileInput = document.getElementById('geojson-file-input') as HTMLInputElement;
+  const fileNameDisplay = document.getElementById('geojson-file-name');
+  const uploadBtn = document.getElementById('upload-geojson-btn') as HTMLButtonElement;
+  const deleteGeojsonBtn = document.getElementById('delete-geojson-btn');
+  let loadedGeojsonData: any = null;
+
+  if (fileInput) {
+    fileInput.addEventListener('change', (e) => {
+      const target = e.target as HTMLInputElement;
+      const file = target.files?.[0];
+      if (!file) return;
+
+      if (fileNameDisplay) fileNameDisplay.innerText = file.name;
+      
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const parsed = JSON.parse(event.target?.result as string);
+          loadedGeojsonData = parsed;
+          if (uploadBtn) {
+            uploadBtn.removeAttribute('disabled');
+            uploadBtn.classList.remove('opacity-50');
+          }
+        } catch (err) {
+          alert("Berkas gagal divalidasi! Pastikan format berkas adalah GeoJSON yang valid.");
+          fileInput.value = "";
+          if (fileNameDisplay) fileNameDisplay.innerText = "Pilih atau Seret Berkas";
+          loadedGeojsonData = null;
+          if (uploadBtn) uploadBtn.setAttribute('disabled', 'true');
+        }
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  if (uploadBtn) {
+    uploadBtn.addEventListener('click', async () => {
+      if (!loadedGeojsonData) return;
+      
+      uploadBtn.innerText = "Menyimpan Berkas...";
+      uploadBtn.setAttribute('disabled', 'true');
+
+      // Upsert into pengaturan_peta at ID 1
+      const { error } = await supabase
+        .from('pengaturan_peta')
+        .upsert({
+          id: 1,
+          batas_geojson: loadedGeojsonData,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) {
+        alert("Gagal mengunggah batas wilayah: " + error.message);
+      } else {
+        alert("Batas wilayah resmi berhasil diperbarui dan diterapkan ke peta publik!");
+        window.location.reload();
+      }
+
+      uploadBtn.innerText = "Simpan Berkas Batas Wilayah";
+      uploadBtn.removeAttribute('disabled');
+    });
+  }
+
+  if (deleteGeojsonBtn) {
+    deleteGeojsonBtn.addEventListener('click', async () => {
+      if (confirm("Apakah Anda yakin ingin menghapus batas wilayah desa dari peta?")) {
+        const { error } = await supabase
+          .from('pengaturan_peta')
+          .update({
+            batas_geojson: null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', 1);
+
+        if (error) {
+          alert("Gagal menghapus: " + error.message);
+        } else {
+          alert("Batas wilayah berhasil dihapus.");
+          window.location.reload();
+        }
+      }
+    });
+  }
+
+  // --- 3. MANAGING OTHER PINS MODAL ---
+  const modal = document.getElementById('pin-modal');
+  const modalTitle = document.getElementById('modal-title');
+  const pinForm = document.getElementById('pin-form') as HTMLFormElement;
+  
+  const inputId = document.getElementById('pin-id') as HTMLInputElement;
+  const inputNama = document.getElementById('pin-nama') as HTMLInputElement;
+  const selectTipe = document.getElementById('pin-tipe') as HTMLSelectElement;
+  const inputLat = document.getElementById('pin-lat') as HTMLInputElement;
+  const inputLng = document.getElementById('pin-lng') as HTMLInputElement;
+  const inputDesc = document.getElementById('pin-deskripsi') as HTMLInputElement;
+  
+  const addBtn = document.getElementById('add-pin-btn');
+  const closeModalBtn = document.getElementById('close-modal-btn');
+  const cancelModalBtn = document.getElementById('cancel-modal-btn');
+  const submitModalBtn = document.getElementById('submit-modal-btn');
+
+  const openModal = (title: string, id = "", nama = "", tipe = "Pendidikan", lat = "", lng = "", desc = "") => {
+    if (!modal) return;
+    if (modalTitle) modalTitle.innerText = title;
+    
+    inputId.value = id;
+    inputNama.value = nama;
+    selectTipe.value = tipe;
+    inputLat.value = lat;
+    inputLng.value = lng;
+    inputDesc.value = desc;
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  };
+
+  const closeModal = () => {
+    if (!modal) return;
+    modal.classList.remove('flex');
+    modal.classList.add('hidden');
+    pinForm.reset();
+  };
+
+  if (addBtn) addBtn.addEventListener('click', () => openModal("Tambah Penanda Peta"));
+  if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+  if (cancelModalBtn) cancelModalBtn.addEventListener('click', closeModal);
+
+  if (pinForm) {
+    pinForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const id = inputId.value;
+      const payload = {
+        nama: inputNama.value,
+        tipe: selectTipe.value,
+        lat: inputLat.value,
+        lng: inputLng.value,
+        deskripsi: inputDesc.value || null
+      };
+
+      if (submitModalBtn) {
+        submitModalBtn.innerText = "Menyimpan...";
+        submitModalBtn.setAttribute('disabled', 'true');
+      }
+
+      if (id) {
+        const { error } = await supabase
+          .from('peta_lokasi')
+          .update(payload)
+          .eq('id', parseInt(id));
+
+        if (error) alert("Gagal memperbarui penanda: " + error.message);
+        else { alert("Penanda peta berhasil diperbarui!"); window.location.reload(); }
+      } else {
+        const { error } = await supabase
+          .from('peta_lokasi')
+          .insert([payload]);
+
+        if (error) alert("Gagal menambahkan penanda: " + error.message);
+        else { alert("Penanda peta baru berhasil ditambahkan!"); window.location.reload(); }
+      }
+    });
+  }
+
+  // --- 4. ROW BUTTON ACTIONS ---
+  document.addEventListener('DOMContentLoaded', () => {
+    // Edit Action
+    const editBtns = document.querySelectorAll('.edit-pin-btn');
+    editBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const el = e.currentTarget as HTMLButtonElement;
+        const id = el.getAttribute('data-id') || "";
+        const nama = el.getAttribute('data-nama') || "";
+        const tipe = el.getAttribute('data-tipe') || "Pendidikan";
+        const lat = el.getAttribute('data-lat') || "";
+        const lng = el.getAttribute('data-lng') || "";
+        const desc = el.getAttribute('data-deskripsi') || "";
+
+        openModal("Edit Penanda Peta", id, nama, tipe, lat, lng, desc);
+      });
+    });
+
+    // Delete Action
+    const deleteBtns = document.querySelectorAll('.delete-pin-btn');
+    deleteBtns.forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const el = e.currentTarget as HTMLButtonElement;
+        const id = el.getAttribute('data-id');
+        const nama = el.getAttribute('data-nama');
+        if (!id) return;
+
+        if (confirm(`Apakah Anda yakin ingin menghapus penanda peta "${nama}"?`)) {
+          const { error } = await supabase
+            .from('peta_lokasi')
+            .delete()
+            .eq('id', parseInt(id));
+
+          if (error) alert("Gagal menghapus penanda: " + error.message);
+          else { alert("Penanda peta berhasil dihapus!"); window.location.reload(); }
+        }
+      });
+    });
+  });
+</script>

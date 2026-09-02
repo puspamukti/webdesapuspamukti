@@ -1,0 +1,748 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Fetch all staff from Supabase
+const { data: dbStaff } = await supabase
+  .from('perangkat_desa')
+  .select('*')
+  .order('urutan', { ascending: true });
+
+const staffList = dbStaff || [];
+const pemdesStaffOnly = staffList.filter(s => s.kategori === 'pemdes');
+
+// Fetch dynamic institutions
+const { data: dbLKD } = await supabase
+  .from('layanan_kelembagaan')
+  .select('*')
+  .eq('tipe', 'Kelembagaan')
+  .order('created_at', { ascending: true });
+
+const lkdList = dbLKD || [];
+
+// Fetch organization chart settings from Supabase (stored in pengaturan_kontak)
+const { data: dbSettings } = await supabase
+  .from('pengaturan_kontak')
+  .select('*')
+  .eq('id', 1)
+  .single();
+
+const settings = dbSettings || { bagan_pemdes_url: "", bagan_bpd_url: "", bagan_lpmd_url: "", bagan_pkk_url: "" };
+
+const getCategoryLabel = (kategori: string) => {
+  if (kategori === 'pemdes') return 'Pemerintah Desa';
+  if (kategori === 'bpd') return 'BPD';
+  if (kategori === 'lpmd') return 'LPMD';
+  if (kategori === 'pkk') return 'TP-PKK';
+  
+  const found = lkdList.find(item => item.nama.toLowerCase().replace(/\s+/g, '-') === kategori);
+  return found ? found.nama : kategori.toUpperCase();
+};
+---
+
+<AdminLayout title="Kelola Aparatur Desa">
+  <div class="space-y-6">
+    
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight text-foreground">Aparatur Desa & Lembaga</h1>
+        <p class="text-muted-foreground mt-1">Kelola data perangkat desa, BPD, LPMD, TP-PKK, foto profil, dan gambar bagan struktur organisasi.</p>
+      </div>
+      <button 
+        id="add-staff-btn"
+        class="inline-flex items-center justify-center rounded-xl text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 gap-2 shadow-md cursor-pointer"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8h2"/><path d="M20 7v2"/></svg>
+        Tambah Aparatur
+      </button>
+    </div>
+
+    <!-- PENGATURAN BAGAN STRUKTUR ORGANISASI -->
+    <div class="bg-card border rounded-3xl p-6 shadow-sm space-y-6">
+      <div>
+        <h2 class="text-lg font-bold text-foreground flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><polygon points="6 2 18 2 18 6 6 6 6 2"/><rect width="6" height="4" x="2" y="14" rx="1"/><rect width="6" height="4" x="9" y="14" rx="1"/><rect width="6" height="4" x="16" y="14" rx="1"/><path d="M12 6v8"/><path d="M5 10h14v4"/></svg>
+          Pengaturan Bagan Struktur Organisasi (Utama)
+        </h2>
+        <p class="text-xs text-muted-foreground mt-0.5">Unggah atau hapus gambar bagan organisasi untuk Pemdes, BPD, LPMD, dan TP-PKK. Untuk lembaga LKD lainnya, atur bagan strukturnya langsung di menu Kelembagaan & Layanan.</p>
+      </div>
+
+      <form id="bagan-form" class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <!-- Bagan Pemdes -->
+        <div class="space-y-2 border rounded-2xl p-4 bg-muted/20 flex flex-col justify-between">
+          <div class="space-y-1">
+            <span class="text-xs font-bold text-foreground uppercase block">Bagan Pemerintah Desa</span>
+            {settings.bagan_pemdes_url ? (
+              <div class="flex items-center justify-between gap-2">
+                <a href={settings.bagan_pemdes_url} target="_blank" class="text-[10px] text-primary underline truncate block max-w-[70%]">Lihat Bagan</a>
+                <button type="button" class="delete-bagan-btn text-[10px] text-destructive hover:underline font-bold cursor-pointer" data-column="bagan_pemdes_url">Hapus</button>
+              </div>
+            ) : (
+              <span class="text-[10px] text-muted-foreground block">Belum ada bagan</span>
+            )}
+          </div>
+          <input 
+            type="file" 
+            id="bagan-pemdes-file" 
+            accept="image/*"
+            class="block w-full text-[10px] text-muted-foreground file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 cursor-pointer"
+          />
+        </div>
+
+        <!-- Bagan BPD -->
+        <div class="space-y-2 border rounded-2xl p-4 bg-muted/20 flex flex-col justify-between">
+          <div class="space-y-1">
+            <span class="text-xs font-bold text-foreground uppercase block">Bagan BPD</span>
+            {settings.bagan_bpd_url ? (
+              <div class="flex items-center justify-between gap-2">
+                <a href={settings.bagan_bpd_url} target="_blank" class="text-[10px] text-primary underline truncate block max-w-[70%]">Lihat Bagan</a>
+                <button type="button" class="delete-bagan-btn text-[10px] text-destructive hover:underline font-bold cursor-pointer" data-column="bagan_bpd_url">Hapus</button>
+              </div>
+            ) : (
+              <span class="text-[10px] text-muted-foreground block">Belum ada bagan</span>
+            )}
+          </div>
+          <input 
+            type="file" 
+            id="bagan-bpd-file" 
+            accept="image/*"
+            class="block w-full text-[10px] text-muted-foreground file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 cursor-pointer"
+          />
+        </div>
+
+        <!-- Bagan LPMD -->
+        <div class="space-y-2 border rounded-2xl p-4 bg-muted/20 flex flex-col justify-between">
+          <div class="space-y-1">
+            <span class="text-xs font-bold text-foreground uppercase block">Bagan LPMD</span>
+            {settings.bagan_lpmd_url ? (
+              <div class="flex items-center justify-between gap-2">
+                <a href={settings.bagan_lpmd_url} target="_blank" class="text-[10px] text-primary underline truncate block max-w-[70%]">Lihat Bagan</a>
+                <button type="button" class="delete-bagan-btn text-[10px] text-destructive hover:underline font-bold cursor-pointer" data-column="bagan_lpmd_url">Hapus</button>
+              </div>
+            ) : (
+              <span class="text-[10px] text-muted-foreground block">Belum ada bagan</span>
+            )}
+          </div>
+          <input 
+            type="file" 
+            id="bagan-lpmd-file" 
+            accept="image/*"
+            class="block w-full text-[10px] text-muted-foreground file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 cursor-pointer"
+          />
+        </div>
+
+        <!-- Bagan TP-PKK -->
+        <div class="space-y-2 border rounded-2xl p-4 bg-muted/20 flex flex-col justify-between">
+          <div class="space-y-1">
+            <span class="text-xs font-bold text-foreground uppercase block">Bagan TP-PKK</span>
+            {settings.bagan_pkk_url ? (
+              <div class="flex items-center justify-between gap-2">
+                <a href={settings.bagan_pkk_url} target="_blank" class="text-[10px] text-primary underline truncate block max-w-[70%]">Lihat Bagan</a>
+                <button type="button" class="delete-bagan-btn text-[10px] text-destructive hover:underline font-bold cursor-pointer" data-column="bagan_pkk_url">Hapus</button>
+              </div>
+            ) : (
+              <span class="text-[10px] text-muted-foreground block">Belum ada bagan</span>
+            )}
+          </div>
+          <input 
+            type="file" 
+            id="bagan-pkk-file" 
+            accept="image/*"
+            class="block w-full text-[10px] text-muted-foreground file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 cursor-pointer"
+          />
+        </div>
+
+        <div class="md:col-span-4 flex justify-end">
+          <button 
+            type="submit" 
+            id="save-bagan-btn"
+            class="inline-flex items-center justify-center rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold h-10 px-5 shadow-sm transition-colors cursor-pointer"
+          >
+            Mulai Unggah & Simpan Bagan
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Staff Table -->
+    <div class="bg-card border rounded-2xl shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+          <thead class="bg-muted/50 text-muted-foreground font-semibold border-b">
+            <tr>
+              <th class="px-6 py-4">Nama Aparatur</th>
+              <th class="px-6 py-4">Jabatan</th>
+              <th class="px-6 py-4">Kategori/Lembaga</th>
+              <th class="px-6 py-4">No. Urut</th>
+              <th class="px-6 py-4 text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y" id="staff-table-body">
+            {staffList.length === 0 ? (
+              <tr>
+                <td colspan="5" class="px-6 py-8 text-center text-muted-foreground">
+                  Belum ada data perangkat desa. Silakan tambah data baru.
+                </td>
+              </tr>
+            ) : (
+              staffList.map((item) => {
+                return (
+                  <tr class="hover:bg-muted/30 transition-colors">
+                    <td class="px-6 py-4 font-bold text-foreground flex items-center gap-3">
+                      {item.foto_url ? (
+                        <img src={item.foto_url} alt={item.nama} class="w-8 h-8 rounded-full object-cover border shrink-0" />
+                      ) : (
+                        <div class="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </div>
+                      )}
+                      <span>{item.nama}</span>
+                    </td>
+                    <td class="px-6 py-4 text-muted-foreground">{item.jabatan}</td>
+                    <td class="px-6 py-4">
+                      <span class={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold ${
+                        item.kategori === 'pemdes' ? 'bg-green-500/10 text-green-600 border-green-500/20' :
+                        item.kategori === 'bpd' ? 'bg-purple-500/10 text-purple-600 border-purple-500/20' :
+                        item.kategori === 'pkk' || item.kategori === 'tp-pkk' ? 'bg-pink-500/10 text-pink-600 border-pink-500/20' :
+                        'bg-blue-500/10 text-blue-600 border-blue-500/20'
+                      }`}>
+                        {getCategoryLabel(item.kategori)}
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 font-bold text-foreground">{item.urutan}</td>
+                    <td class="px-6 py-4 text-right whitespace-nowrap">
+                      <button 
+                        class="edit-btn text-primary hover:underline text-xs font-bold mr-3 cursor-pointer"
+                        data-id={item.id}
+                        data-nama={item.nama}
+                        data-jabatan={item.jabatan}
+                        data-kategori={item.kategori}
+                        data-urutan={item.urutan}
+                        data-foto={item.foto_url || ''}
+                      >
+                        Edit
+                      </button>
+                      <button 
+                        class="delete-btn text-destructive hover:underline text-xs font-bold cursor-pointer"
+                        data-id={item.id}
+                        data-nama={item.nama}
+                      >
+                        Hapus
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dialog Modal (Add/Edit Form) -->
+  <div id="staff-modal" class="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-card border w-full max-w-lg rounded-3xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="px-6 py-5 border-b flex justify-between items-center bg-muted/20">
+        <h3 id="modal-title" class="font-bold text-lg text-foreground">Tambah Aparatur Desa</h3>
+        <button id="close-modal-btn" class="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      
+      <form id="staff-form" class="p-6 overflow-y-auto space-y-4 flex-1" novalidate>
+        <input type="hidden" id="staff-id" />
+        <input type="hidden" id="staff-foto-url-existing" />
+        
+        <div class="space-y-1.5 text-left">
+          <label for="staff-nama" class="text-xs font-bold text-foreground uppercase tracking-wider">Nama Lengkap & Gelar</label>
+          <input 
+            type="text" 
+            id="staff-nama" 
+            placeholder="Contoh: Ibu Elin Nuralawiyah" 
+            class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs transition-colors"
+            required
+          />
+          <p id="staff-nama-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+            <span>Nama aparatur wajib diisi (minimal 3 huruf).</span>
+          </p>
+        </div>
+
+        <div class="space-y-1.5 text-left">
+          <label for="staff-jabatan" class="text-xs font-bold text-foreground uppercase tracking-wider">Jabatan Struktural</label>
+          <input 
+            type="text" 
+            id="staff-jabatan" 
+            placeholder="Contoh: Ketua TP-PKK / Sekretaris PKK / Bendahara PKK" 
+            class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs transition-colors"
+            required
+          />
+          <p id="staff-jabatan-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+            <span>Jabatan struktural wajib diisi.</span>
+          </p>
+          <div class="flex flex-wrap gap-1.5 mt-1.5" id="jabatan-suggestions">
+            <span class="px-2 py-0.5 rounded-full border bg-secondary/50 hover:bg-secondary text-[10px] text-muted-foreground cursor-pointer font-medium transition-colors dynamic-tag">Kepala Desa</span>
+            <span class="px-2 py-0.5 rounded-full border bg-secondary/50 hover:bg-secondary text-[10px] text-muted-foreground cursor-pointer font-medium transition-colors dynamic-tag">Sekretaris Desa</span>
+            <span class="px-2 py-0.5 rounded-full border bg-secondary/50 hover:bg-secondary text-[10px] text-muted-foreground cursor-pointer font-medium transition-colors dynamic-tag">Kaur Keuangan</span>
+            <span class="px-2 py-0.5 rounded-full border bg-secondary/50 hover:bg-secondary text-[10px] text-muted-foreground cursor-pointer font-medium transition-colors dynamic-tag">Kasi Pemerintahan</span>
+            <span class="px-2 py-0.5 rounded-full border bg-secondary/50 hover:bg-secondary text-[10px] text-muted-foreground cursor-pointer font-medium transition-colors dynamic-tag">Kepala Dusun</span>
+            <span class="px-2 py-0.5 rounded-full border bg-secondary/50 hover:bg-secondary text-[10px] text-muted-foreground cursor-pointer font-medium transition-colors dynamic-tag">Ketua TP-PKK</span>
+            <span class="px-2 py-0.5 rounded-full border bg-secondary/50 hover:bg-secondary text-[10px] text-muted-foreground cursor-pointer font-medium transition-colors dynamic-tag">Ketua BPD</span>
+            <span class="px-2 py-0.5 rounded-full border bg-secondary/50 hover:bg-secondary text-[10px] text-muted-foreground cursor-pointer font-medium transition-colors dynamic-tag">Ketua LPMD</span>
+          </div>
+        </div>
+
+        <div class="space-y-1.5 text-left">
+          <label for="staff-foto-file" class="text-xs font-bold text-foreground uppercase tracking-wider">Foto Profil (Pilih File Gambar)</label>
+          <div class="flex items-center gap-4">
+            <div class="w-14 h-14 bg-muted border rounded-full flex items-center justify-center overflow-hidden shrink-0" id="staff-foto-preview">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div class="flex flex-col gap-1.5 w-full">
+              <input 
+                type="file" 
+                id="staff-foto-file" 
+                accept="image/*"
+                class="block w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 cursor-pointer"
+              />
+              <button type="button" id="delete-staff-foto-btn" class="inline-flex items-center justify-center rounded-lg border border-destructive/20 text-[10px] text-destructive hover:bg-destructive/10 font-bold h-7 px-3 w-fit cursor-pointer transition-colors">
+                Hapus Foto Profil
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1.5 text-left">
+            <label for="staff-kategori" class="text-xs font-bold text-foreground uppercase tracking-wider">Kategori / Lembaga</label>
+            <select 
+              id="staff-kategori" 
+              class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer shadow-2xs"
+              required
+            >
+              <option value="pemdes">Pemerintah Desa</option>
+              <option value="bpd">BPD (Legislatif)</option>
+              <option value="lpmd">LPMD</option>
+              <option value="pkk">TP-PKK (PKK)</option>
+              
+              {lkdList.map((item) => {
+                const slug = item.nama.toLowerCase().replace(/\s+/g, '-');
+                // Avoid duplicating BPD, LPMD, PKK if they are registered in kelembagaan list
+                if (['bpd', 'lpmd', 'pkk', 'tp-pkk'].includes(slug)) return null;
+                return (
+                  <option value={slug}>{item.nama}</option>
+                );
+              })}
+            </select>
+          </div>
+
+          <div class="space-y-1.5 text-left">
+            <label for="staff-urutan" class="text-xs font-bold text-foreground uppercase tracking-wider">No. Urut Tampilan</label>
+            <input 
+              type="number" 
+              id="staff-urutan" 
+              placeholder="Contoh: 1, 2, 3" 
+              class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs transition-colors"
+              required
+              min="1"
+            />
+            <p id="staff-urutan-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+              <span>Nomor urut wajib diisi angka.</span>
+            </p>
+          </div>
+        </div>
+        <p class="text-[10px] text-muted-foreground leading-relaxed -mt-3.5 text-left">
+          * Angka lebih kecil tampil paling atas di web (Kades = 1, Sekdes = 2, Kaur/Kasi = 3, Kadus = 4).
+        </p>
+
+        <div class="pt-4 border-t flex justify-end gap-3">
+          <button 
+            type="button" 
+            id="cancel-modal-btn" 
+            class="inline-flex items-center justify-center rounded-xl border border-input bg-background hover:bg-accent text-sm font-bold h-11 px-4 cursor-pointer"
+          >
+            Batal
+          </button>
+          <button 
+            type="submit" 
+            id="submit-modal-btn" 
+            class="inline-flex items-center justify-center rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold h-11 px-6 shadow-md cursor-pointer"
+          >
+            Simpan Aparatur
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { supabase } from '../../lib/supabase';
+
+  const BUCKET_NAME = 'desa-media';
+
+  const modal = document.getElementById('staff-modal');
+  const modalTitle = document.getElementById('modal-title');
+  const staffForm = document.getElementById('staff-form') as HTMLFormElement;
+  
+  const inputId = document.getElementById('staff-id') as HTMLInputElement;
+  const inputNama = document.getElementById('staff-nama') as HTMLInputElement;
+  const inputJabatan = document.getElementById('staff-jabatan') as HTMLInputElement;
+  const inputFotoFile = document.getElementById('staff-foto-file') as HTMLInputElement;
+  const inputFotoUrlExisting = document.getElementById('staff-foto-url-existing') as HTMLInputElement;
+  const previewFoto = document.getElementById('staff-foto-preview');
+  const inputKategori = document.getElementById('staff-kategori') as HTMLSelectElement;
+  const inputUrutan = document.getElementById('staff-urutan') as HTMLInputElement;
+  const deleteStaffFotoBtn = document.getElementById('delete-staff-foto-btn');
+
+  const addBtn = document.getElementById('add-staff-btn');
+  const closeModalBtn = document.getElementById('close-modal-btn');
+  const cancelModalBtn = document.getElementById('cancel-modal-btn');
+  const submitModalBtn = document.getElementById('submit-modal-btn');
+
+  // Preview Photo File Change
+  if (inputFotoFile) {
+    inputFotoFile.addEventListener('change', () => {
+      const file = inputFotoFile.files?.[0];
+      if (file && previewFoto) {
+        const url = URL.createObjectURL(file);
+        previewFoto.innerHTML = `<img src="${url}" class="w-full h-full object-cover" />`;
+      }
+    });
+  }
+
+  // Handle Delete Staff Photo Click
+  if (deleteStaffFotoBtn) {
+    deleteStaffFotoBtn.addEventListener('click', () => {
+      if (inputFotoFile) inputFotoFile.value = "";
+      if (inputFotoUrlExisting) inputFotoUrlExisting.value = "";
+      if (previewFoto) {
+        previewFoto.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+      }
+    });
+  }
+
+  // Upload helper to Supabase Storage
+  const uploadImage = async (file: File, folder: string): Promise<string> => {
+    const ext = file.name.split('.').pop();
+    const cleanName = `${folder}/${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
+
+    const { data, error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(cleanName, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      if (error.message.includes('bucket not found') || error.message.includes('does not exist')) {
+        throw new Error(`Bucket penyimpanan '${BUCKET_NAME}' belum dibuat.`);
+      }
+      throw error;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from(BUCKET_NAME)
+      .getPublicUrl(cleanName);
+
+    return urlData.publicUrl;
+  };
+
+  // Handle Bagan Form Submit
+  const baganForm = document.getElementById('bagan-form');
+  const saveBaganBtn = document.getElementById('save-bagan-btn');
+  if (baganForm) {
+    baganForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const filePemdes = (document.getElementById('bagan-pemdes-file') as HTMLInputElement).files?.[0];
+      const fileBpd = (document.getElementById('bagan-bpd-file') as HTMLInputElement).files?.[0];
+      const fileLpmd = (document.getElementById('bagan-lpmd-file') as HTMLInputElement).files?.[0];
+      const filePkk = (document.getElementById('bagan-pkk-file') as HTMLInputElement).files?.[0];
+
+      if (!filePemdes && !fileBpd && !fileLpmd && !filePkk) {
+        alert("Pilih setidaknya satu file gambar bagan untuk diunggah!");
+        return;
+      }
+
+      if (saveBaganBtn) {
+        saveBaganBtn.innerText = "Mengunggah Gambar...";
+        saveBaganBtn.setAttribute('disabled', 'true');
+      }
+
+      try {
+        const updatePayload: Record<string, string> = {};
+
+        if (filePemdes) {
+          updatePayload.bagan_pemdes_url = await uploadImage(filePemdes, 'bagan');
+        }
+        if (fileBpd) {
+          updatePayload.bagan_bpd_url = await uploadImage(fileBpd, 'bagan');
+        }
+        if (fileLpmd) {
+          updatePayload.bagan_lpmd_url = await uploadImage(fileLpmd, 'bagan');
+        }
+        if (filePkk) {
+          updatePayload.bagan_pkk_url = await uploadImage(filePkk, 'bagan');
+        }
+
+        const { error } = await supabase
+          .from('pengaturan_kontak')
+          .update(updatePayload)
+          .eq('id', 1);
+
+        if (error) throw error;
+
+        alert("Semua bagan struktur organisasi terpilih berhasil diunggah & disimpan!");
+        window.location.reload();
+      } catch (err: any) {
+        alert("Gagal mengunggah bagan: " + err.message);
+      } finally {
+        if (saveBaganBtn) {
+          saveBaganBtn.innerText = "Mulai Unggah & Simpan Bagan";
+          saveBaganBtn.removeAttribute('disabled');
+        }
+      }
+    });
+  }
+
+  // Handle Delete Bagan Buttons Click
+  document.querySelectorAll('.delete-bagan-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const target = e.currentTarget as HTMLButtonElement;
+      const column = target.getAttribute('data-column');
+      if (!column) return;
+
+      if (confirm("Apakah Anda yakin ingin menghapus gambar bagan ini? Bagan akan kembali ke tampilan default.")) {
+        target.innerText = "...";
+        target.setAttribute('disabled', 'true');
+
+        const { error } = await supabase
+          .from('pengaturan_kontak')
+          .update({
+            [column]: null
+          })
+          .eq('id', 1);
+
+        if (error) {
+          alert("Gagal menghapus bagan: " + error.message);
+          target.innerText = "Hapus";
+          target.removeAttribute('disabled');
+        } else {
+          alert("Gambar bagan berhasil dihapus!");
+          window.location.reload();
+        }
+      }
+    });
+  });
+
+  // Handle Jabatan Suggestion Chip Clicks
+  const suggestionContainer = document.getElementById('jabatan-suggestions');
+  if (suggestionContainer) {
+    suggestionContainer.querySelectorAll('.dynamic-tag').forEach(tag => {
+      tag.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        if (inputJabatan && target) {
+          inputJabatan.value = target.innerText;
+          inputJabatan.focus();
+        }
+      });
+    });
+  }
+
+  // Open Modal
+  const openModal = (title: string, id = "", nama = "", jabatan = "", kategori = "pemdes", urutan = "1", foto = "") => {
+    if (!modal) return;
+    if (modalTitle) modalTitle.innerText = title;
+    
+    inputId.value = id;
+    inputNama.value = nama;
+    inputJabatan.value = jabatan;
+    inputKategori.value = kategori;
+    inputUrutan.value = urutan;
+    inputFotoUrlExisting.value = foto;
+    
+    if (inputFotoFile) inputFotoFile.value = "";
+
+    if (foto && previewFoto) {
+      previewFoto.innerHTML = `<img src="${foto}" class="w-full h-full object-cover" />`;
+    } else if (previewFoto) {
+      previewFoto.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+    }
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  };
+
+  const namaError = document.getElementById('staff-nama-error');
+  const jabatanError = document.getElementById('staff-jabatan-error');
+  const urutanError = document.getElementById('staff-urutan-error');
+
+  function validateStaffForm(): boolean {
+    let valid = true;
+
+    // Nama
+    if (inputNama.value.trim().length < 3) {
+      inputNama.classList.add('border-destructive', 'focus-visible:ring-destructive');
+      inputNama.classList.remove('border-input', 'focus-visible:ring-primary');
+      namaError?.classList.remove('hidden');
+      valid = false;
+    } else {
+      inputNama.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+      inputNama.classList.add('border-input', 'focus-visible:ring-primary');
+      namaError?.classList.add('hidden');
+    }
+
+    // Jabatan
+    if (inputJabatan.value.trim().length < 3) {
+      inputJabatan.classList.add('border-destructive', 'focus-visible:ring-destructive');
+      inputJabatan.classList.remove('border-input', 'focus-visible:ring-primary');
+      jabatanError?.classList.remove('hidden');
+      valid = false;
+    } else {
+      inputJabatan.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+      inputJabatan.classList.add('border-input', 'focus-visible:ring-primary');
+      jabatanError?.classList.add('hidden');
+    }
+
+    // Urutan
+    if (!inputUrutan.value || parseInt(inputUrutan.value) < 1) {
+      inputUrutan.classList.add('border-destructive', 'focus-visible:ring-destructive');
+      inputUrutan.classList.remove('border-input', 'focus-visible:ring-primary');
+      urutanError?.classList.remove('hidden');
+      valid = false;
+    } else {
+      inputUrutan.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+      inputUrutan.classList.add('border-input', 'focus-visible:ring-primary');
+      urutanError?.classList.add('hidden');
+    }
+
+    return valid;
+  }
+
+  inputNama?.addEventListener('input', () => { if (!namaError?.classList.contains('hidden')) validateStaffForm(); });
+  inputJabatan?.addEventListener('input', () => { if (!jabatanError?.classList.contains('hidden')) validateStaffForm(); });
+  inputUrutan?.addEventListener('input', () => { if (!urutanError?.classList.contains('hidden')) validateStaffForm(); });
+
+  // Close Modal
+  const closeModal = () => {
+    if (!modal) return;
+    modal.classList.remove('flex');
+    modal.classList.add('hidden');
+    staffForm.reset();
+    namaError?.classList.add('hidden');
+    jabatanError?.classList.add('hidden');
+    urutanError?.classList.add('hidden');
+  };
+
+  if (addBtn) addBtn.addEventListener('click', () => openModal("Tambah Aparatur Desa"));
+  if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+  if (cancelModalBtn) cancelModalBtn.addEventListener('click', closeModal);
+
+  // Submit Handler
+  if (staffForm) {
+    staffForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!validateStaffForm()) return;
+
+      const id = inputId.value;
+      const nama = inputNama.value.trim();
+      const jabatan = inputJabatan.value.trim();
+      const kategori = inputKategori.value;
+      const urutan = parseInt(inputUrutan.value || '99');
+      const fileFoto = inputFotoFile.files?.[0];
+
+      if (submitModalBtn) {
+        submitModalBtn.innerText = "Menyimpan...";
+        submitModalBtn.setAttribute('disabled', 'true');
+      }
+
+      try {
+        let foto_url = inputFotoUrlExisting.value || null;
+
+        if (fileFoto) {
+          submitModalBtn.innerText = "Mengunggah Foto...";
+          foto_url = await uploadImage(fileFoto, 'aparatur');
+        }
+
+        const payload = {
+          nama,
+          jabatan,
+          kategori,
+          urutan,
+          foto_url
+        };
+
+        if (id) {
+          const { error } = await supabase
+            .from('perangkat_desa')
+            .update(payload)
+            .eq('id', parseInt(id));
+
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from('perangkat_desa')
+            .insert([payload]);
+
+          if (error) throw error;
+        }
+        
+        window.location.reload();
+      } catch (err: any) {
+        alert("Gagal menyimpan data: " + err.message);
+      } finally {
+        if (submitModalBtn) {
+          submitModalBtn.innerText = "Simpan Aparatur";
+          submitModalBtn.removeAttribute('disabled');
+        }
+      }
+    });
+  }
+
+  // Edit Action
+  const editBtns = document.querySelectorAll('.edit-btn');
+  editBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const el = e.currentTarget as HTMLButtonElement;
+      const id = el.getAttribute('data-id') || "";
+      const nama = el.getAttribute('data-nama') || "";
+      const jabatan = el.getAttribute('data-jabatan') || "";
+      const kategori = el.getAttribute('data-kategori') || "pemdes";
+      const urutan = el.getAttribute('data-urutan') || "1";
+      const foto = el.getAttribute('data-foto') || "";
+
+      openModal("Edit Aparatur Desa", id, nama, jabatan, kategori, urutan, foto);
+    });
+  });
+
+  // Delete Action
+  const deleteBtns = document.querySelectorAll('.delete-btn');
+  deleteBtns.forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const el = e.currentTarget as HTMLButtonElement;
+      const id = el.getAttribute('data-id');
+      const nama = el.getAttribute('data-nama');
+      if (!id) return;
+
+      if (confirm(`Apakah Anda yakin ingin menghapus aparatur "${nama}"?`)) {
+        const { error } = await supabase
+          .from('perangkat_desa')
+          .delete()
+          .eq('id', parseInt(id));
+
+        if (error) {
+          alert("Gagal menghapus data: " + error.message);
+        } else {
+          alert("Aparatur desa berhasil dihapus!");
+          window.location.reload();
+        }
+      }
+    });
+  });
+</script>

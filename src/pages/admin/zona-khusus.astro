@@ -1,0 +1,399 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Fetch all zones from Supabase
+const { data: dbZones } = await supabase
+  .from('zona_khusus')
+  .select('*')
+  .order('created_at', { ascending: true });
+
+const zones = dbZones || [];
+---
+
+<AdminLayout title="Kelola Zona Khusus Desa">
+  <div class="space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight text-foreground">Zona Wilayah Khusus</h1>
+        <p class="text-muted-foreground mt-1">Kelola peruntukan tata ruang wilayah, cagar budaya, serta penetapan aset tanah desa.</p>
+      </div>
+      <button 
+        id="add-zona-btn"
+        class="inline-flex items-center justify-center rounded-xl text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 gap-2 shadow-md cursor-pointer"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+        Tambah Zona Baru
+      </button>
+    </div>
+
+    <!-- Zones Table -->
+    <div class="bg-card border rounded-2xl shadow-sm overflow-hidden animate-fade-in">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+          <thead class="bg-muted/50 text-muted-foreground font-semibold border-b">
+            <tr>
+              <th class="px-6 py-4">Nama Zona</th>
+              <th class="px-6 py-4">Lokasi Wilayah</th>
+              <th class="px-6 py-4">Luas Area</th>
+              <th class="px-6 py-4">Status Regulasi</th>
+              <th class="px-6 py-4 text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y" id="zona-table-body">
+            {zones.length === 0 ? (
+              <tr>
+                <td colspan="5" class="px-6 py-8 text-center text-muted-foreground">
+                  Belum ada pembagian zona wilayah khusus yang terdaftar. Silakan tambah data baru.
+                </td>
+              </tr>
+            ) : (
+              zones.map((zone) => (
+                <tr class="hover:bg-muted/30 transition-colors">
+                  <td class="px-6 py-4 font-bold text-foreground">
+                    <div>
+                      <span>{zone.nama}</span>
+                      <p class="text-[10px] text-muted-foreground font-normal mt-0.5 max-w-xs sm:max-w-md truncate">{zone.deskripsi}</p>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 text-muted-foreground">{zone.lokasi}</td>
+                  <td class="px-6 py-4 text-xs font-semibold text-foreground">{zone.luas}</td>
+                  <td class="px-6 py-4">
+                    <span class={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-[10px] font-semibold ${
+                      zone.status === 'Dilindungi' ? 'bg-destructive/10 text-destructive border-destructive/20' : 
+                      zone.status === 'Cagar Budaya' ? 'bg-amber-500/10 text-amber-600 border-amber-500/20' : 
+                      'bg-green-500/10 text-green-600 border-green-500/20'
+                    }`}>
+                      {zone.status === 'Pemanfaatan Produktif' ? 'Pemanfaatan' : zone.status}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 text-right whitespace-nowrap">
+                    <button 
+                      class="edit-zona-btn text-primary hover:underline text-xs font-bold mr-3 cursor-pointer"
+                      data-id={zone.id}
+                      data-nama={zone.nama}
+                      data-lokasi={zone.lokasi}
+                      data-luas={zone.luas}
+                      data-status={zone.status}
+                      data-deskripsi={zone.deskripsi}
+                    >
+                      Edit
+                    </button>
+                    <button 
+                      class="delete-zona-btn text-destructive hover:underline text-xs font-bold cursor-pointer"
+                      data-id={zone.id}
+                      data-nama={zone.nama}
+                    >
+                      Hapus
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Modal (Add/Edit) -->
+  <div id="zona-modal" class="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-card border w-full max-w-md rounded-3xl shadow-xl overflow-hidden flex flex-col">
+      <div class="px-6 py-5 border-b flex justify-between items-center bg-muted/20">
+        <h3 id="modal-title" class="font-bold text-lg text-foreground font-sans">Tambah Zona Wilayah</h3>
+        <button id="close-modal-btn" class="p-1.5 rounded-lg hover:bg-muted text-muted-foreground">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="zona-form" class="p-6 space-y-4" novalidate>
+        <input type="hidden" id="zona-id" />
+        
+        <div class="space-y-1.5 text-left">
+          <label for="zona-nama" class="text-xs font-bold text-foreground uppercase tracking-wider">Nama Zona Wilayah</label>
+          <input 
+            type="text" 
+            id="zona-nama" 
+            placeholder="Contoh: Hutan Lindung & Konservasi" 
+            class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs transition-colors"
+            required
+          />
+          <p id="zona-nama-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+            <span>Nama zona wilayah wajib diisi (minimal 3 huruf).</span>
+          </p>
+        </div>
+
+        <div class="space-y-1.5 text-left">
+          <label for="zona-lokasi" class="text-xs font-bold text-foreground uppercase tracking-wider">Lokasi Area Dusun</label>
+          <input 
+            type="text" 
+            id="zona-lokasi" 
+            placeholder="Contoh: Wilayah Lereng Bukit Dusun 5" 
+            class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs transition-colors"
+            required
+          />
+          <p id="zona-lokasi-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+            <span>Lokasi area wajib diisi.</span>
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1.5 text-left">
+            <label for="zona-luas" class="text-xs font-bold text-foreground uppercase tracking-wider">Luas Area</label>
+            <input 
+              type="text" 
+              id="zona-luas" 
+              placeholder="Contoh: 12,5 Hektar" 
+              class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs transition-colors"
+              required
+            />
+            <p id="zona-luas-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+              <span>Luas area wajib diisi.</span>
+            </p>
+          </div>
+
+          <div class="space-y-1.5 text-left">
+            <label for="zona-status" class="text-xs font-bold text-foreground uppercase tracking-wider">Status Regulasi</label>
+            <select 
+              id="zona-status" 
+              class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer shadow-2xs"
+              required
+            >
+              <option value="Dilindungi">Dilindungi</option>
+              <option value="Pemanfaatan Produktif">Pemanfaatan Produktif</option>
+              <option value="Cagar Budaya">Cagar Budaya</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="space-y-1.5 text-left">
+          <label for="zona-deskripsi" class="text-xs font-bold text-foreground uppercase tracking-wider">Deskripsi Peruntukan Tata Ruang</label>
+          <textarea 
+            id="zona-deskripsi" 
+            rows="3" 
+            placeholder="Tulis alasan konservasi, larangan, atau tata kelola pemanfaatan lahan di area ini..."
+            class="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary resize-none shadow-2xs transition-colors"
+            required
+          ></textarea>
+          <p id="zona-desc-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+            <span>Deskripsi tata ruang wajib diisi (minimal 5 huruf).</span>
+          </p>
+        </div>
+
+        <div class="pt-4 border-t flex justify-end gap-3">
+          <button 
+            type="button" 
+            id="cancel-modal-btn" 
+            class="inline-flex items-center justify-center rounded-xl border border-input bg-background hover:bg-accent text-sm font-bold h-11 px-4 cursor-pointer transition-colors"
+          >
+            Batal
+          </button>
+          <button 
+            type="submit" 
+            id="submit-modal-btn" 
+            class="inline-flex items-center justify-center rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold h-11 px-6 shadow-md hover:shadow-lg cursor-pointer transition-all"
+          >
+            Simpan Zona
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { supabase } from '../../lib/supabase';
+
+  const modal = document.getElementById('zona-modal');
+  const modalTitle = document.getElementById('modal-title');
+  const form = document.getElementById('zona-form') as HTMLFormElement;
+  
+  const inputId = document.getElementById('zona-id') as HTMLInputElement;
+  const inputNama = document.getElementById('zona-nama') as HTMLInputElement;
+  const inputLokasi = document.getElementById('zona-lokasi') as HTMLInputElement;
+  const inputLuas = document.getElementById('zona-luas') as HTMLInputElement;
+  const selectStatus = document.getElementById('zona-status') as HTMLSelectElement;
+  const textareaDesc = document.getElementById('zona-deskripsi') as HTMLTextAreaElement;
+
+  const addBtn = document.getElementById('add-zona-btn');
+  const closeBtn = document.getElementById('close-modal-btn');
+  const cancelBtn = document.getElementById('cancel-modal-btn');
+  const submitBtn = document.getElementById('submit-modal-btn');
+
+  const namaError = document.getElementById('zona-nama-error');
+  const lokasiError = document.getElementById('zona-lokasi-error');
+  const luasError = document.getElementById('zona-luas-error');
+  const descError = document.getElementById('zona-desc-error');
+
+  function validateZonaForm(): boolean {
+    let valid = true;
+
+    if (inputNama.value.trim().length < 3) {
+      inputNama.classList.add('border-destructive', 'focus-visible:ring-destructive');
+      inputNama.classList.remove('border-input', 'focus-visible:ring-primary');
+      namaError?.classList.remove('hidden');
+      valid = false;
+    } else {
+      inputNama.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+      inputNama.classList.add('border-input', 'focus-visible:ring-primary');
+      namaError?.classList.add('hidden');
+    }
+
+    if (!inputLokasi.value.trim()) {
+      inputLokasi.classList.add('border-destructive', 'focus-visible:ring-destructive');
+      inputLokasi.classList.remove('border-input', 'focus-visible:ring-primary');
+      lokasiError?.classList.remove('hidden');
+      valid = false;
+    } else {
+      inputLokasi.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+      inputLokasi.classList.add('border-input', 'focus-visible:ring-primary');
+      lokasiError?.classList.add('hidden');
+    }
+
+    if (!inputLuas.value.trim()) {
+      inputLuas.classList.add('border-destructive', 'focus-visible:ring-destructive');
+      inputLuas.classList.remove('border-input', 'focus-visible:ring-primary');
+      luasError?.classList.remove('hidden');
+      valid = false;
+    } else {
+      inputLuas.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+      inputLuas.classList.add('border-input', 'focus-visible:ring-primary');
+      luasError?.classList.add('hidden');
+    }
+
+    if (textareaDesc.value.trim().length < 5) {
+      textareaDesc.classList.add('border-destructive', 'focus-visible:ring-destructive');
+      textareaDesc.classList.remove('border-input', 'focus-visible:ring-primary');
+      descError?.classList.remove('hidden');
+      valid = false;
+    } else {
+      textareaDesc.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+      textareaDesc.classList.add('border-input', 'focus-visible:ring-primary');
+      descError?.classList.add('hidden');
+    }
+
+    return valid;
+  }
+
+  inputNama?.addEventListener('input', () => { if (!namaError?.classList.contains('hidden')) validateZonaForm(); });
+  inputLokasi?.addEventListener('input', () => { if (!lokasiError?.classList.contains('hidden')) validateZonaForm(); });
+  inputLuas?.addEventListener('input', () => { if (!luasError?.classList.contains('hidden')) validateZonaForm(); });
+  textareaDesc?.addEventListener('input', () => { if (!descError?.classList.contains('hidden')) validateZonaForm(); });
+
+  const openModal = (title: string, id = "", nama = "", lokasi = "", luas = "", status = "Dilindungi", deskripsi = "") => {
+    if (!modal) return;
+    if (modalTitle) modalTitle.innerText = title;
+    
+    inputId.value = id;
+    inputNama.value = nama;
+    inputLokasi.value = lokasi;
+    inputLuas.value = luas;
+    selectStatus.value = status;
+    textareaDesc.value = deskripsi;
+
+    namaError?.classList.add('hidden');
+    lokasiError?.classList.add('hidden');
+    luasError?.classList.add('hidden');
+    descError?.classList.add('hidden');
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  };
+
+  const closeModal = () => {
+    if (!modal) return;
+    modal.classList.remove('flex');
+    modal.classList.add('hidden');
+    form.reset();
+    namaError?.classList.add('hidden');
+    lokasiError?.classList.add('hidden');
+    luasError?.classList.add('hidden');
+    descError?.classList.add('hidden');
+  };
+
+  if (addBtn) addBtn.addEventListener('click', () => openModal("Tambah Zona Wilayah"));
+  if (closeBtn) closeBtn.addEventListener('click', closeModal);
+  if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!validateZonaForm()) return;
+      
+      const id = inputId.value;
+      const payload = {
+        nama: inputNama.value.trim(),
+        lokasi: inputLokasi.value.trim(),
+        luas: inputLuas.value.trim(),
+        status: selectStatus.value,
+        deskripsi: textareaDesc.value.trim()
+      };
+
+      if (submitBtn) {
+        submitBtn.innerText = "Menyimpan...";
+        submitBtn.setAttribute('disabled', 'true');
+      }
+
+      if (id) {
+        const { error } = await supabase
+          .from('zona_khusus')
+          .update(payload)
+          .eq('id', parseInt(id));
+
+        if (error) alert("Gagal mengupdate zona: " + error.message);
+        else { window.location.reload(); }
+      } else {
+        const { error } = await supabase
+          .from('zona_khusus')
+          .insert([payload]);
+
+        if (error) alert("Gagal menyimpan zona: " + error.message);
+        else { window.location.reload(); }
+      }
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // Edit Action
+    const editBtns = document.querySelectorAll('.edit-zona-btn');
+    editBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const el = e.currentTarget as HTMLButtonElement;
+        const id = el.getAttribute('data-id') || "";
+        const nama = el.getAttribute('data-nama') || "";
+        const lokasi = el.getAttribute('data-lokasi') || "";
+        const luas = el.getAttribute('data-luas') || "";
+        const status = el.getAttribute('data-status') || "Dilindungi";
+        const deskripsi = el.getAttribute('data-deskripsi') || "";
+
+        openModal("Edit Zona Wilayah", id, nama, lokasi, luas, status, deskripsi);
+      });
+    });
+
+    // Delete Action
+    const deleteBtns = document.querySelectorAll('.delete-zona-btn');
+    deleteBtns.forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const el = e.currentTarget as HTMLButtonElement;
+        const id = el.getAttribute('data-id');
+        const nama = el.getAttribute('data-nama');
+        if (!id) return;
+
+        if (confirm(`Apakah Anda yakin ingin menghapus zona khusus "${nama}"?`)) {
+          const { error } = await supabase
+            .from('zona_khusus')
+            .delete()
+            .eq('id', parseInt(id));
+
+          if (error) alert("Gagal menghapus zona: " + error.message);
+          else { alert("Zona khusus berhasil dihapus!"); window.location.reload(); }
+        }
+      });
+    });
+  });
+</script>

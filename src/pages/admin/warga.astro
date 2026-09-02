@@ -1,0 +1,510 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Fetch current data
+const { data: penduduk } = await supabase
+  .from('penduduk')
+  .select('*')
+  .order('nama', { ascending: true });
+
+const pendudukList = penduduk || [];
+---
+<AdminLayout title="Kelola Data Warga">
+  <div class="space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight text-foreground">Data Kependudukan</h1>
+        <p class="text-muted-foreground mt-1">Kelola data warga untuk akses Portal Warga (E-Gov).</p>
+      </div>
+      <div class="flex gap-2">
+        <label 
+          for="excel-upload"
+          class="inline-flex items-center justify-center rounded-xl text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-green-600 text-white hover:bg-green-700 h-10 px-4 py-2 gap-2 shadow-md cursor-pointer"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x1="12" y1="3" y2="15"/></svg>
+          Impor Excel
+        </label>
+        <input type="file" id="excel-upload" accept=".xlsx, .xls, .csv" class="hidden" />
+
+        <button 
+          id="add-warga-btn"
+          class="inline-flex items-center justify-center rounded-xl text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 gap-2 shadow-md cursor-pointer"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+          Tambah Data
+        </button>
+      </div>
+    </div>
+
+    <!-- Table Container -->
+    <div class="bg-card border rounded-3xl shadow-sm overflow-hidden animate-fade-in">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+          <thead class="bg-muted/50 text-muted-foreground font-semibold border-b">
+            <tr>
+              <th class="px-6 py-4">NIK</th>
+              <th class="px-6 py-4">Nama Lengkap</th>
+              <th class="px-6 py-4">Tanggal Lahir</th>
+              <th class="px-6 py-4">RT/RW</th>
+              <th class="px-6 py-4">Status Bansos</th>
+              <th class="px-6 py-4 text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y" id="warga-table-body">
+            {pendudukList.length === 0 ? (
+              <tr>
+                <td colspan="6" class="px-6 py-8 text-center text-muted-foreground">
+                  Belum ada data warga. Silakan tambah data baru.
+                </td>
+              </tr>
+            ) : (
+              pendudukList.map((item) => (
+                <tr class="hover:bg-muted/30 transition-colors">
+                  <td class="px-6 py-4 font-mono font-medium text-xs">
+                    {item.nik}
+                  </td>
+                  <td class="px-6 py-4 font-bold text-foreground">
+                    {item.nama}
+                  </td>
+                  <td class="px-6 py-4">
+                    {item.tanggal_lahir}
+                  </td>
+                  <td class="px-6 py-4">
+                    {item.rt_rw || '-'}
+                  </td>
+                  <td class="px-6 py-4">
+                    <span class={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1.5 ${
+                      item.status_bantuan === 'Tidak Menerima' ? 'bg-muted text-muted-foreground' :
+                      item.status_bantuan?.includes('Komplementer') || (item.status_bantuan?.includes('PKH') && item.status_bantuan?.includes('BPNT')) ? 'bg-purple-500/10 text-purple-700 border border-purple-200' :
+                      item.status_bantuan === 'BLT Dana Desa' ? 'bg-amber-500/10 text-amber-700 border border-amber-200' :
+                      item.status_bantuan === 'Bansos PKH' ? 'bg-blue-500/10 text-blue-700 border border-blue-200' :
+                      item.status_bantuan === 'Bansos BPNT' ? 'bg-emerald-500/10 text-emerald-700 border border-emerald-200' :
+                      'bg-primary/10 text-primary border border-primary/20'
+                    }`}>
+                      {item.status_bantuan}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 text-right whitespace-nowrap">
+                    <button 
+                      class="edit-warga-btn text-primary hover:underline text-xs font-bold mr-3 cursor-pointer"
+                      data-raw={JSON.stringify(item)}
+                    >
+                      Edit
+                    </button>
+                    <button 
+                      class="delete-warga-btn text-destructive hover:underline text-xs font-bold cursor-pointer"
+                      data-id={item.id}
+                      data-nama={item.nama}
+                    >
+                      Hapus
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Form -->
+  <div id="warga-modal" class="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-card border w-full max-w-md rounded-3xl shadow-xl overflow-hidden flex flex-col">
+      <div class="px-6 py-5 border-b flex justify-between items-center bg-muted/20">
+        <h3 id="modal-title" class="font-bold text-lg text-foreground font-sans">Form Data Warga</h3>
+        <button id="close-modal-btn" class="p-1.5 rounded-lg hover:bg-muted text-muted-foreground">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="warga-form" class="p-6 space-y-4 flex-1" novalidate>
+        <input type="hidden" id="warga-id" />
+        
+        <div class="space-y-1.5 text-left">
+          <div class="flex justify-between items-center">
+            <label class="text-xs font-bold text-foreground uppercase tracking-wider">NIK (16 Digit Angka)</label>
+            <span id="admin-nik-counter" class="text-[10px] font-mono text-muted-foreground">0/16</span>
+          </div>
+          <input 
+            type="text" 
+            id="warga-nik" 
+            inputmode="numeric"
+            maxlength="16"
+            placeholder="16 Digit NIK" 
+            class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs transition-colors"
+            required
+          />
+          <p id="admin-nik-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+            <span>NIK harus 16 digit angka.</span>
+          </p>
+        </div>
+
+        <div class="space-y-1.5 text-left">
+          <label class="text-xs font-bold text-foreground uppercase tracking-wider">Nama Lengkap</label>
+          <input 
+            type="text" 
+            id="warga-nama" 
+            placeholder="Nama Lengkap Sesuai KTP" 
+            class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs transition-colors"
+            required
+          />
+          <p id="admin-nama-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+            <span>Nama lengkap wajib diisi (minimal 3 huruf).</span>
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1.5 text-left">
+            <label class="text-xs font-bold text-foreground uppercase tracking-wider">Tanggal Lahir</label>
+            <input 
+              type="date" 
+              id="warga-tgl" 
+              class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs transition-colors"
+              required
+            />
+            <p id="admin-tgl-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+              <span>Pilih tanggal lahir.</span>
+            </p>
+          </div>
+          <div class="space-y-1.5 text-left">
+            <label class="text-xs font-bold text-foreground uppercase tracking-wider">RT/RW</label>
+            <input 
+              type="text" 
+              id="warga-rtrw" 
+              placeholder="Contoh: 01/02" 
+              class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs transition-colors"
+            />
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1.5 text-left">
+            <label class="text-xs font-bold text-foreground uppercase tracking-wider">Jenis Kelamin</label>
+            <select id="warga-jk" class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer shadow-2xs">
+              <option value="Laki-laki">Laki-laki</option>
+              <option value="Perempuan">Perempuan</option>
+            </select>
+          </div>
+          <div class="space-y-1.5 text-left">
+            <label class="text-xs font-bold text-foreground uppercase tracking-wider">Status Bansos</label>
+            <select id="warga-bansos" class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer shadow-2xs">
+              <option value="Tidak Menerima">Tidak Menerima</option>
+              <option value="PKH & BPNT (Komplementer)">PKH & BPNT (Komplementer)</option>
+              <option value="Bansos PKH">Bansos PKH</option>
+              <option value="Bansos BPNT">Bansos BPNT</option>
+              <option value="BLT Dana Desa">BLT Dana Desa</option>
+              <option value="Bansos Lainnya">Bansos Lainnya</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="pt-4 flex gap-3 border-t">
+          <button type="button" id="cancel-modal-btn" class="flex-1 inline-flex items-center justify-center rounded-xl text-sm font-bold transition-colors bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2 cursor-pointer">
+            Batal
+          </button>
+          <button type="submit" id="save-btn" class="flex-1 inline-flex items-center justify-center rounded-xl text-sm font-bold transition-all bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 cursor-pointer shadow-md hover:shadow-lg">
+            Simpan Data
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</AdminLayout>
+
+<!-- Import SheetJS CDN for Excel parsing client-side -->
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js" is:inline></script>
+
+<script>
+  import { supabase } from '../../lib/supabase';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // === EXCEL IMPORT LOGIC ===
+    const excelUpload = document.getElementById('excel-upload') as HTMLInputElement;
+    excelUpload?.addEventListener('change', async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = (window as any).XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          
+          // Convert sheet to JSON
+          const jsonData = (window as any).XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+          
+          if (jsonData.length === 0) {
+            alert('File Excel kosong atau tidak terbaca.');
+            return;
+          }
+
+          if(!confirm(`Ditemukan ${jsonData.length} baris data. Apakah Anda yakin ingin mengimpor semuanya ke database? Pastikan kolom berisi: NIK, Nama, Tanggal Lahir (YYYY-MM-DD), Jenis Kelamin, RT/RW, Status Bantuan.`)) {
+            excelUpload.value = '';
+            return;
+          }
+
+          // Show loading
+          const uploadLabel = document.querySelector('label[for="excel-upload"]') as HTMLElement;
+          const originalHTML = uploadLabel.innerHTML;
+          uploadLabel.innerHTML = 'Mengimpor...';
+          uploadLabel.style.pointerEvents = 'none';
+
+          // Map the imported JSON to our database schema
+          // We look for common column names (case insensitive)
+          const findValue = (row: any, keys: string[]) => {
+            const keyFound = Object.keys(row).find(k => keys.includes(k.toLowerCase().trim()));
+            return keyFound ? row[keyFound] : '';
+          };
+
+          const payloads = jsonData.map((row: any) => {
+            // Excel dates might come as numbers or string. Let's do best effort string parsing.
+            let tglLahirStr = findValue(row, ['tanggal lahir', 'tgl lahir', 'tanggal_lahir', 'tgl_lahir']);
+            // If it's a number (Excel serial date), it would need conversion. For simplicity, we assume text 'YYYY-MM-DD'
+            
+            return {
+              nik: String(findValue(row, ['nik', 'no ktp', 'ktp'])).trim(),
+              nama: findValue(row, ['nama', 'nama lengkap']),
+              tanggal_lahir: tglLahirStr || '1970-01-01', 
+              jenis_kelamin: findValue(row, ['jenis kelamin', 'jk', 'kelamin']) || 'Laki-laki',
+              rt_rw: findValue(row, ['rt/rw', 'rtrw', 'rt rw', 'rt']) || '',
+              status_bantuan: findValue(row, ['status bantuan', 'bansos', 'bantuan']) || 'Tidak Menerima'
+            };
+          }).filter(p => p.nik && p.nama); // Only insert rows that at least have NIK and Nama
+
+          if (payloads.length === 0) {
+            alert('Format tidak sesuai. Pastikan ada kolom "NIK" dan "Nama".');
+            uploadLabel.innerHTML = originalHTML;
+            uploadLabel.style.pointerEvents = 'auto';
+            excelUpload.value = '';
+            return;
+          }
+
+          // Insert using Supabase bulk insert
+          const { error } = await supabase.from('penduduk').insert(payloads);
+
+          if (error) {
+            // If NIK already exists, it will throw a unique constraint error
+            if (error.code === '23505') {
+              alert('Gagal: Terdapat NIK yang sudah terdaftar di database. Periksa kembali Excel Anda agar tidak ada NIK duplikat.');
+            } else {
+              alert('Gagal mengimpor data: ' + error.message);
+            }
+          } else {
+            alert(`Berhasil mengimpor ${payloads.length} data warga!`);
+            window.location.reload();
+          }
+
+          uploadLabel.innerHTML = originalHTML;
+          uploadLabel.style.pointerEvents = 'auto';
+          excelUpload.value = '';
+
+        } catch (error) {
+          console.error(error);
+          alert('Terjadi kesalahan saat membaca file Excel.');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+
+    // === EXISTING MODAL LOGIC ===
+    const modal = document.getElementById('warga-modal');
+    const form = document.getElementById('warga-form') as HTMLFormElement;
+    
+    const idInput = document.getElementById('warga-id') as HTMLInputElement;
+    const nikInput = document.getElementById('warga-nik') as HTMLInputElement;
+    const namaInput = document.getElementById('warga-nama') as HTMLInputElement;
+    const tglInput = document.getElementById('warga-tgl') as HTMLInputElement;
+    const rtrwInput = document.getElementById('warga-rtrw') as HTMLInputElement;
+    const jkInput = document.getElementById('warga-jk') as HTMLSelectElement;
+    const bansosInput = document.getElementById('warga-bansos') as HTMLSelectElement;
+
+    const nikCounter = document.getElementById('admin-nik-counter');
+    const nikError = document.getElementById('admin-nik-error');
+    const namaError = document.getElementById('admin-nama-error');
+    const tglError = document.getElementById('admin-tgl-error');
+
+    function validateAdminWarga(): boolean {
+      let isValid = true;
+
+      // NIK
+      const rawNik = nikInput.value.replace(/[^0-9]/g, '');
+      nikInput.value = rawNik;
+      if (nikCounter) nikCounter.textContent = `${rawNik.length}/16`;
+
+      if (rawNik.length !== 16) {
+        nikInput.classList.add('border-destructive', 'focus-visible:ring-destructive');
+        nikInput.classList.remove('border-input', 'focus-visible:ring-primary');
+        nikError?.classList.remove('hidden');
+        isValid = false;
+      } else {
+        nikInput.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+        nikInput.classList.add('border-input', 'focus-visible:ring-primary');
+        nikError?.classList.add('hidden');
+      }
+
+      // Nama
+      const rawNama = namaInput.value.trim();
+      if (rawNama.length < 3) {
+        namaInput.classList.add('border-destructive', 'focus-visible:ring-destructive');
+        namaInput.classList.remove('border-input', 'focus-visible:ring-primary');
+        namaError?.classList.remove('hidden');
+        isValid = false;
+      } else {
+        namaInput.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+        namaInput.classList.add('border-input', 'focus-visible:ring-primary');
+        namaError?.classList.add('hidden');
+      }
+
+      // Tgl
+      if (!tglInput.value) {
+        tglInput.classList.add('border-destructive', 'focus-visible:ring-destructive');
+        tglInput.classList.remove('border-input', 'focus-visible:ring-primary');
+        tglError?.classList.remove('hidden');
+        isValid = false;
+      } else {
+        tglInput.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+        tglInput.classList.add('border-input', 'focus-visible:ring-primary');
+        tglError?.classList.add('hidden');
+      }
+
+      return isValid;
+    }
+
+    nikInput?.addEventListener('input', () => {
+      const rawNik = nikInput.value.replace(/[^0-9]/g, '');
+      nikInput.value = rawNik;
+      if (nikCounter) nikCounter.textContent = `${rawNik.length}/16`;
+      if (!nikError?.classList.contains('hidden')) validateAdminWarga();
+    });
+
+    namaInput?.addEventListener('input', () => {
+      if (!namaError?.classList.contains('hidden')) validateAdminWarga();
+    });
+
+    tglInput?.addEventListener('change', () => {
+      if (!tglError?.classList.contains('hidden')) validateAdminWarga();
+    });
+
+    const openModal = (isEdit = false, rawData: any = null) => {
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+        nikError?.classList.add('hidden');
+        namaError?.classList.add('hidden');
+        tglError?.classList.add('hidden');
+
+        if (isEdit && rawData) {
+          idInput.value = rawData.id;
+          nikInput.value = rawData.nik;
+          namaInput.value = rawData.nama;
+          tglInput.value = rawData.tanggal_lahir;
+          rtrwInput.value = rawData.rt_rw || '';
+          jkInput.value = rawData.jenis_kelamin || 'Laki-laki';
+          bansosInput.value = rawData.status_bantuan || 'Tidak Menerima';
+          if (nikCounter) nikCounter.textContent = `${rawData.nik.length}/16`;
+        } else {
+          form.reset();
+          idInput.value = '';
+          if (nikCounter) nikCounter.textContent = '0/16';
+        }
+      }
+    };
+
+    const closeModal = () => {
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        form.reset();
+      }
+    };
+
+    document.getElementById('add-warga-btn')?.addEventListener('click', () => openModal(false));
+    document.getElementById('close-modal-btn')?.addEventListener('click', closeModal);
+    document.getElementById('cancel-modal-btn')?.addEventListener('click', closeModal);
+
+    document.querySelectorAll('.edit-warga-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const rawData = JSON.parse(target.dataset.raw || '{}');
+        openModal(true, rawData);
+      });
+    });
+
+    document.querySelectorAll('.delete-warga-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const id = target.dataset.id;
+        const nama = target.dataset.nama;
+
+        if (confirm(`Hapus data warga: ${nama}?`)) {
+          if(target) target.textContent = 'Menghapus...';
+          try {
+            const { error } = await supabase.from('penduduk').delete().eq('id', id);
+            if (error) throw error;
+            window.location.reload();
+          } catch (error) {
+            console.error(error);
+            alert('Gagal menghapus data.');
+            if(target) target.textContent = 'Hapus';
+          }
+        }
+      });
+    });
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      if (!validateAdminWarga()) return;
+
+      const id = idInput.value;
+      const saveBtn = document.getElementById('save-btn');
+      if(saveBtn) {
+        saveBtn.textContent = 'Menyimpan...';
+        saveBtn.setAttribute('disabled', 'true');
+      }
+      
+      try {
+        const payload = {
+          nik: nikInput.value.trim(),
+          nama: namaInput.value.trim(),
+          tanggal_lahir: tglInput.value,
+          rt_rw: rtrwInput.value.trim(),
+          jenis_kelamin: jkInput.value,
+          status_bantuan: bansosInput.value,
+        };
+
+        let error;
+        if (id) {
+          const { error: updateError } = await supabase.from('penduduk').update(payload).eq('id', id);
+          error = updateError;
+        } else {
+          const { error: insertError } = await supabase.from('penduduk').insert([payload]);
+          error = insertError;
+        }
+
+        if (error) throw error;
+        window.location.reload();
+      } catch (error: any) {
+        console.error(error);
+        if (error.code === '23505') {
+          alert('Gagal: NIK sudah terdaftar di database.');
+        } else {
+          alert('Gagal menyimpan data: ' + (error.message || 'Kesalahan sistem'));
+        }
+        if(saveBtn) {
+          saveBtn.textContent = 'Simpan Data';
+          saveBtn.removeAttribute('disabled');
+        }
+      }
+    });
+  });
+</script>

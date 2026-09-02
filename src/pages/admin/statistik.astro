@@ -1,0 +1,417 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Fetch current stats from Supabase
+const { data: dbStats } = await supabase
+  .from('statistik')
+  .select('*')
+  .single();
+
+const stats = dbStats || { 
+  id: 1, 
+  total_penduduk: 4250, 
+  total_pria: 2140, 
+  total_wanita: 2110, 
+  total_kk: 1320,
+  total_dusun: 5,
+  total_rt: 32,
+  total_rw: 8,
+  pendidikan_sd: 1060,
+  pendidikan_smp: 1275,
+  pendidikan_sma: 1360,
+  pendidikan_kuliah: 555,
+  usia_anak: 850,
+  usia_produktif: 2890,
+  usia_lansia: 510
+};
+---
+
+<AdminLayout title="Data Statistik Desa">
+  <div class="space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight text-foreground">Data Statistik Desa</h1>
+        <p class="text-muted-foreground mt-1">Kelola demografi penduduk, wilayah desa, tingkat pendidikan, dan kelompok usia.</p>
+      </div>
+      <div class="flex gap-3">
+        <button 
+          id="sync-db-btn"
+          type="button"
+          class="inline-flex items-center justify-center rounded-xl text-sm font-bold transition-all bg-emerald-600 hover:bg-emerald-700 text-white h-11 px-4 gap-2 shadow-xs hover:shadow-md cursor-pointer"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+          Sinkronkan dari Data Warga
+        </button>
+        <button 
+          id="save-stats-btn" 
+          type="button"
+          class="inline-flex items-center justify-center rounded-xl text-sm font-bold transition-all bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-6 shadow-xs hover:shadow-md cursor-pointer"
+        >
+          Simpan Perubahan
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Kolom Kiri: Form Input Statistik -->
+      <div class="lg:col-span-2 space-y-6">
+        
+        <!-- Info Banner Sinkronisasi -->
+        <div class="bg-card border border-emerald-500/20 rounded-3xl p-6 shadow-xs relative overflow-hidden bg-gradient-to-br from-card via-card to-emerald-500/5">
+          <div class="flex items-start gap-4">
+            <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+            </div>
+            <div class="space-y-1">
+              <h3 class="font-bold text-sm text-foreground">Terintegrasi dengan Database Warga E-Gov</h3>
+              <p class="text-xs text-muted-foreground leading-relaxed">
+                Untuk menjaga keakuratan dan mencegah duplikasi, pengunggahan berkas Excel data kependudukan dipusatkan di menu <strong><a href="/admin/warga" class="text-primary underline font-semibold">Database Warga</a></strong>. Klik tombol <em>"Sinkronkan dari Data Warga"</em> di atas untuk menghitung otomatis total jiwa, rasio gender, dan kelompok usia secara langsung dari database desa.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 1. Parameter Kependudukan Utama (Read-only / Synced) -->
+        <div class="bg-card border rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
+          <div class="flex justify-between items-center border-b pb-4">
+            <h3 class="font-bold text-lg text-foreground">1. Parameter Kependudukan & Wilayah</h3>
+            <span class="text-[11px] font-semibold text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
+              Otomatis & Terkunci
+            </span>
+          </div>
+          
+          <form id="stats-form" class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <!-- ID Hidden -->
+            <input type="hidden" id="stats-id" value={stats.id} />
+
+            <!-- Total Penduduk -->
+            <div class="space-y-2">
+              <label for="total-penduduk" class="text-xs font-bold text-foreground uppercase tracking-wider">Total Penduduk (Jiwa)</label>
+              <input 
+                type="number" 
+                id="total-penduduk" 
+                value={stats.total_penduduk} 
+                class="flex h-12 w-full rounded-xl border border-input bg-muted text-muted-foreground px-3.5 py-2 text-sm shadow-xs cursor-not-allowed focus-visible:outline-none font-semibold"
+                readonly
+                required
+              />
+            </div>
+            
+            <!-- Kepala Keluarga -->
+            <div class="space-y-2">
+              <label for="total-kk" class="text-xs font-bold text-foreground uppercase tracking-wider">Total Kepala Keluarga (KK)</label>
+              <input 
+                type="number" 
+                id="total-kk" 
+                value={stats.total_kk} 
+                class="flex h-12 w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                required
+              />
+            </div>
+
+            <!-- Laki-laki -->
+            <div class="space-y-2">
+              <label for="total-pria" class="text-xs font-bold text-foreground uppercase tracking-wider">Penduduk Laki-Laki</label>
+              <input 
+                type="number" 
+                id="total-pria" 
+                value={stats.total_pria} 
+                class="flex h-12 w-full rounded-xl border border-input bg-muted text-muted-foreground px-3.5 py-2 text-sm shadow-xs cursor-not-allowed focus-visible:outline-none"
+                readonly
+                required
+              />
+            </div>
+
+            <!-- Perempuan -->
+            <div class="space-y-2">
+              <label for="total-wanita" class="text-xs font-bold text-foreground uppercase tracking-wider">Penduduk Perempuan</label>
+              <input 
+                type="number" 
+                id="total-wanita" 
+                value={stats.total_wanita} 
+                class="flex h-12 w-full rounded-xl border border-input bg-muted text-muted-foreground px-3.5 py-2 text-sm shadow-xs cursor-not-allowed focus-visible:outline-none"
+                readonly
+                required
+              />
+            </div>
+
+            <!-- Dusun -->
+            <div class="space-y-2">
+              <label for="total-dusun" class="text-xs font-bold text-foreground uppercase tracking-wider">Jumlah Dusun</label>
+              <input 
+                type="number" 
+                id="total-dusun" 
+                value={stats.total_dusun || 5} 
+                class="flex h-12 w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                required
+              />
+            </div>
+
+            <!-- RW -->
+            <div class="space-y-2">
+              <label for="total-rw" class="text-xs font-bold text-foreground uppercase tracking-wider">Jumlah RW</label>
+              <input 
+                type="number" 
+                id="total-rw" 
+                value={stats.total_rw || 8} 
+                class="flex h-12 w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                required
+              />
+            </div>
+
+            <!-- RT -->
+            <div class="space-y-2">
+              <label for="total-rt" class="text-xs font-bold text-foreground uppercase tracking-wider">Jumlah RT</label>
+              <input 
+                type="number" 
+                id="total-rt" 
+                value={stats.total_rt || 32} 
+                class="flex h-12 w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                required
+              />
+            </div>
+          </form>
+        </div>
+
+        <!-- 2. Tingkat Pendidikan -->
+        <div class="bg-card border rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
+          <h3 class="font-bold text-lg border-b pb-4 text-foreground">2. Parameter Pendidikan Terakhir</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div class="space-y-2">
+              <label for="pend-sd" class="text-xs font-bold text-foreground uppercase tracking-wider">SD / Sederajat (Jiwa)</label>
+              <input 
+                type="number" 
+                id="pend-sd" 
+                value={stats.pendidikan_sd} 
+                class="flex h-12 w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                required
+              />
+            </div>
+            <div class="space-y-2">
+              <label for="pend-smp" class="text-xs font-bold text-foreground uppercase tracking-wider">SMP / Sederajat (Jiwa)</label>
+              <input 
+                type="number" 
+                id="pend-smp" 
+                value={stats.pendidikan_smp} 
+                class="flex h-12 w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                required
+              />
+            </div>
+            <div class="space-y-2">
+              <label for="pend-sma" class="text-xs font-bold text-foreground uppercase tracking-wider">SMA / Sederajat (Jiwa)</label>
+              <input 
+                type="number" 
+                id="pend-sma" 
+                value={stats.pendidikan_sma} 
+                class="flex h-12 w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                required
+              />
+            </div>
+            <div class="space-y-2">
+              <label for="pend-kuliah" class="text-xs font-bold text-foreground uppercase tracking-wider">Diploma / Sarjana (Jiwa)</label>
+              <input 
+                type="number" 
+                id="pend-kuliah" 
+                value={stats.pendidikan_kuliah} 
+                class="flex h-12 w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                required
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Kelompok Usia -->
+        <div class="bg-card border rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
+          <h3 class="font-bold text-lg border-b pb-4 text-foreground">3. Parameter Kelompok Usia</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div class="space-y-2">
+              <label for="usia-anak" class="text-xs font-bold text-foreground uppercase tracking-wider">0 - 14 Tahun (Jiwa)</label>
+              <input 
+                type="number" 
+                id="usia-anak" 
+                value={stats.usia_anak} 
+                class="flex h-12 w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                required
+              />
+            </div>
+            <div class="space-y-2">
+              <label for="usia-productive" class="text-xs font-bold text-foreground uppercase tracking-wider">15 - 64 Tahun (Jiwa)</label>
+              <input 
+                type="number" 
+                id="usia-productive" 
+                value={stats.usia_productive || stats.usia_produktif} 
+                class="flex h-12 w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                required
+              />
+            </div>
+            <div class="space-y-2">
+              <label for="usia-lansia" class="text-xs font-bold text-foreground uppercase tracking-wider">65+ Tahun (Jiwa)</label>
+              <input 
+                type="number" 
+                id="usia-lansia" 
+                value={stats.usia_lansia} 
+                class="flex h-12 w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                required
+              />
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Kolom Kanan: Panduan & Info -->
+      <div class="space-y-6">
+        <div class="bg-card border rounded-3xl p-6 shadow-xs space-y-4">
+          <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="16" y2="12"/><line x1="12" x2="12.01" y1="8" y2="8"/></svg>
+          </div>
+          <h3 class="font-bold text-base text-foreground">Panduan Data Statistik</h3>
+          <div class="text-xs text-muted-foreground space-y-3 leading-relaxed">
+            <p>1. <strong>Satu Pintu Data:</strong> Seluruh berkas kependudukan diunggah melalui menu <a href="/admin/warga" class="text-primary font-semibold hover:underline">Database Warga</a> agar akun warga E-Gov dan data statistik selalu selaras.</p>
+            <p>2. <strong>Sinkronisasi Instan:</strong> Klik tombol hijau <em>"Sinkronkan dari Data Warga"</em> untuk memperbarui jumlah penduduk, pria, dan wanita tanpa menghitung manual.</p>
+            <p>3. Angka yang Anda simpan di halaman ini akan langsung memperbarui grafik infografis publik di <a href="/profil/data-statistik" target="_blank" class="text-primary font-semibold hover:underline">/profil/data-statistik</a> secara langsung.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { supabase } from '../../lib/supabase';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const syncBtn = document.getElementById('sync-db-btn');
+    const saveBtn = document.getElementById('save-stats-btn');
+
+    // 1. Sync from 'penduduk' table in Supabase
+    syncBtn?.addEventListener('click', async () => {
+      syncBtn.textContent = 'Menghitung Data Warga...';
+      syncBtn.setAttribute('disabled', 'true');
+
+      try {
+        const { data: pendudukList, error } = await supabase
+          .from('penduduk')
+          .select('*');
+
+        if (error) throw error;
+
+        if (!pendudukList || pendudukList.length === 0) {
+          alert('Database Warga masih kosong. Silakan unggah Excel kependudukan di menu Database Warga terlebih dahulu.');
+          return;
+        }
+
+        const totalPenduduk = pendudukList.length;
+        const totalPria = pendudukList.filter(p => {
+          const jk = (p.jenis_kelamin || '').toLowerCase();
+          return jk.includes('laki') || jk === 'l' || jk === 'pria';
+        }).length;
+        const totalWanita = totalPenduduk - totalPria;
+
+        // Calculate age distribution if tanggal_lahir exists
+        let anak = 0; // 0-14
+        let produktif = 0; // 15-64
+        let lansia = 0; // 65+
+
+        const currentYear = new Date().getFullYear();
+
+        pendudukList.forEach(p => {
+          if (p.tanggal_lahir) {
+            const birthYear = new Date(p.tanggal_lahir).getFullYear();
+            if (!isNaN(birthYear)) {
+              const age = currentYear - birthYear;
+              if (age <= 14) anak++;
+              else if (age <= 64) produktif++;
+              else lansia++;
+            }
+          }
+        });
+
+        // Apply values to inputs
+        const totalEl = document.getElementById('total-penduduk') as HTMLInputElement;
+        const priaEl = document.getElementById('total-pria') as HTMLInputElement;
+        const wanitaEl = document.getElementById('total-wanita') as HTMLInputElement;
+        const anakEl = document.getElementById('usia-anak') as HTMLInputElement;
+        const produktifEl = document.getElementById('usia-productive') as HTMLInputElement;
+        const lansiaEl = document.getElementById('usia-lansia') as HTMLInputElement;
+
+        if (totalEl) totalEl.value = String(totalPenduduk);
+        if (priaEl) priaEl.value = String(totalPria);
+        if (wanitaEl) wanitaEl.value = String(totalWanita);
+        
+        if (anak > 0 || produktif > 0 || lansia > 0) {
+          if (anakEl) anakEl.value = String(anak);
+          if (produktifEl) produktifEl.value = String(produktif);
+          if (lansiaEl) lansiaEl.value = String(lansia);
+        }
+
+        alert(`✅ Berhasil menyinkronkan data dari ${totalPenduduk} warga di database! Klik "Simpan Perubahan" untuk menerapkan secara permanen.`);
+
+      } catch (err: any) {
+        console.error(err);
+        alert('Gagal menyinkronkan data: ' + (err.message || 'Terjadi kesalahan'));
+      } finally {
+        syncBtn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+          Sinkronkan dari Data Warga
+        `;
+        syncBtn.removeAttribute('disabled');
+      }
+    });
+
+    // 2. Save stats to Supabase
+    saveBtn?.addEventListener('click', async (e) => {
+      e.preventDefault();
+
+      if (saveBtn) {
+        saveBtn.textContent = 'Menyimpan...';
+        saveBtn.setAttribute('disabled', 'true');
+      }
+
+      try {
+        const statsId = (document.getElementById('stats-id') as HTMLInputElement)?.value || "1";
+        
+        const payload = {
+          total_penduduk: parseInt((document.getElementById('total-penduduk') as HTMLInputElement)?.value) || 0,
+          total_kk: parseInt((document.getElementById('total-kk') as HTMLInputElement)?.value) || 0,
+          total_pria: parseInt((document.getElementById('total-pria') as HTMLInputElement)?.value) || 0,
+          total_wanita: parseInt((document.getElementById('total-wanita') as HTMLInputElement)?.value) || 0,
+          total_dusun: parseInt((document.getElementById('total-dusun') as HTMLInputElement)?.value) || 0,
+          total_rw: parseInt((document.getElementById('total-rw') as HTMLInputElement)?.value) || 0,
+          total_rt: parseInt((document.getElementById('total-rt') as HTMLInputElement)?.value) || 0,
+          pendidikan_sd: parseInt((document.getElementById('pend-sd') as HTMLInputElement)?.value) || 0,
+          pendidikan_smp: parseInt((document.getElementById('pend-smp') as HTMLInputElement)?.value) || 0,
+          pendidikan_sma: parseInt((document.getElementById('pend-sma') as HTMLInputElement)?.value) || 0,
+          pendidikan_kuliah: parseInt((document.getElementById('pend-kuliah') as HTMLInputElement)?.value) || 0,
+          usia_anak: parseInt((document.getElementById('usia-anak') as HTMLInputElement)?.value) || 0,
+          usia_produktif: parseInt((document.getElementById('usia-productive') as HTMLInputElement)?.value) || 0,
+          usia_lansia: parseInt((document.getElementById('usia-lansia') as HTMLInputElement)?.value) || 0,
+        };
+
+        const { error } = await supabase
+          .from('statistik')
+          .update(payload)
+          .eq('id', parseInt(statsId));
+
+        if (error) throw error;
+
+        alert('✅ Data statistik desa berhasil diperbarui!');
+        window.location.reload();
+
+      } catch (err: any) {
+        console.error(err);
+        alert('Gagal menyimpan statistik: ' + (err.message || 'Terjadi kesalahan'));
+      } finally {
+        if (saveBtn) {
+          saveBtn.textContent = 'Simpan Perubahan';
+          saveBtn.removeAttribute('disabled');
+        }
+      }
+    });
+  });
+</script>
+

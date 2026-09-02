@@ -1,0 +1,116 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { supabase } from '../lib/supabase';
+
+// Fetch public services from Supabase
+const { data: dbLayanan } = await supabase
+  .from('layanan_kelembagaan')
+  .select('*')
+  .eq('tipe', 'Layanan Publik')
+  .order('created_at', { ascending: true });
+
+const layananList = dbLayanan || [];
+
+// Pre-defined SVG icons based on icon name
+const getIconHTML = (iconName: string) => {
+  switch(iconName) {
+    case 'KTP/KK':
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 18a3 3 0 1 0-6 0"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><circle cx="12" cy="13" r="2"/></svg>`;
+    case 'Usaha (SKU)':
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`;
+    case 'Nikah (NA)':
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`;
+    case 'SKCK':
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>`;
+    case 'SKTM':
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`;
+    case 'Pertanahan':
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M3 7v14"/><path d="M21 7v14"/><path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/></svg>`;
+    default:
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/></svg>`;
+  }
+};
+---
+
+<Layout title="Layanan Publik - Desa Puspamukti">
+  <div class="container mx-auto px-4 max-w-screen-xl py-12 md:py-20 space-y-16">
+    
+    <!-- Hero Section -->
+    <div class="text-center max-w-3xl mx-auto space-y-6">
+      <div class="inline-flex items-center rounded-full border px-3 py-1 text-sm font-semibold border-primary/20 bg-primary/10 text-primary mb-2">
+        Birokrasi Mudah & Cepat
+      </div>
+      <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground">
+        Layanan Administrasi
+      </h1>
+      <p class="text-lg md:text-xl text-muted-foreground leading-relaxed">
+        Pemerintah Desa Puspamukti berkomitmen memberikan pelayanan administrasi kependudukan yang prima, cepat, dan transparan bagi seluruh warga.
+      </p>
+    </div>
+
+    <!-- Informasi Jam Operasional -->
+    <div class="bg-card border shadow-sm rounded-3xl p-8 max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-8 md:gap-12">
+      <div class="w-16 h-16 flex-shrink-0 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div class="text-center md:text-left space-y-2">
+        <h3 class="text-2xl font-bold text-foreground">Jam Pelayanan Kantor Desa</h3>
+        <p class="text-muted-foreground">Silakan datang ke Balai Desa Puspamukti pada jadwal berikut untuk mengurus keperluan administrasi Anda.</p>
+      </div>
+      <div class="bg-muted rounded-xl p-4 md:ml-auto w-full md:w-auto text-center md:text-right flex flex-col justify-center">
+        <p class="font-bold text-foreground">Senin - Jumat</p>
+        <p class="text-primary font-bold text-lg whitespace-nowrap">08:00 - 15:00 WIB</p>
+        <p class="text-xs text-muted-foreground mt-1">Sabtu, Minggu & Tanggal Merah Tutup</p>
+      </div>
+    </div>
+
+    <!-- Daftar Layanan -->
+    <div class="space-y-8">
+      <div class="text-center space-y-2 mb-10">
+        <h2 class="text-3xl font-bold tracking-tight">Jenis Layanan Surat Pengantar</h2>
+        <div class="h-1.5 w-20 bg-primary rounded-full mx-auto"></div>
+      </div>
+
+      {layananList.length === 0 ? (
+        <div class="bg-card border rounded-3xl p-12 text-center max-w-xl mx-auto space-y-4 shadow-sm">
+          <h3 class="text-xl font-bold text-foreground">Belum Ada Layanan</h3>
+          <p class="text-sm text-muted-foreground">Persyaratan berkas layanan desa saat ini belum diterbitkan oleh admin.</p>
+        </div>
+      ) : (
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {layananList.map((item) => (
+            <div class="bg-card border rounded-3xl p-6 md:p-8 hover:shadow-lg hover:border-primary/50 transition-all flex flex-col">
+              <div class="flex items-start gap-4 mb-6">
+                <div class="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0" set:html={getIconHTML(item.icon)}></div>
+                <div class="flex-grow">
+                  <h3 class="font-bold text-xl text-foreground mb-1">{item.nama}</h3>
+                  <p class="text-sm text-muted-foreground leading-relaxed">{item.desc_singkat}</p>
+                </div>
+              </div>
+              
+              <div class="bg-muted/50 rounded-2xl p-5 mb-6 flex-grow">
+                <h4 class="font-semibold text-sm mb-3 text-foreground flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                  Persyaratan Dokumen:
+                </h4>
+                <ul class="space-y-2">
+                  {item.syarat && item.syarat.map((syarat) => (
+                    <li class="text-sm text-muted-foreground flex items-start gap-2">
+                      <span class="text-primary font-bold mt-0.5">•</span>
+                      {syarat}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div class="pt-4 border-t flex items-center justify-between">
+                <span class="text-xs text-muted-foreground italic">*Penerbitan surat gratis tanpa pungutan</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+
+  </div>
+</Layout>

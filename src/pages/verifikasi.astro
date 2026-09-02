@@ -1,0 +1,234 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { supabase } from '../lib/supabase';
+
+// Server-side check if query param exists
+const searchNomor = Astro.url.searchParams.get('nomor') || '';
+---
+
+<Layout title="Verifikasi Dokumen Resmi E-Surat | Desa Puspamukti">
+  <main class="container mx-auto px-4 py-12 md:py-16 max-w-screen-md min-h-[75vh] flex flex-col justify-center">
+    
+    <div class="space-y-8 animate-fade-in">
+      
+      <!-- Top Branding Header -->
+      <div class="text-center space-y-3">
+        <div class="inline-flex items-center justify-center p-3 rounded-2xl bg-primary/10 border border-primary/20 shadow-xs mb-2">
+          <img src="/logodesa.webp" alt="Logo Desa Puspamukti" class="h-14 w-auto object-contain" />
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-foreground">Sistem Verifikasi Dokumen Digital</h1>
+        <p class="text-xs sm:text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
+          Pemerintah Desa Puspamukti, Kecamatan Cigalontang, Kabupaten Tasikmalaya. Validasi keaslian dokumen administrasi dan surat keterangan resmi.
+        </p>
+      </div>
+
+      <!-- Search Box if Manual Query -->
+      <div class="bg-card border rounded-2xl p-4 shadow-sm">
+        <form id="search-verif-form" class="flex flex-col sm:flex-row gap-2.5">
+          <div class="relative flex-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input 
+              type="text" 
+              id="input-nomor-surat"
+              value={searchNomor}
+              placeholder="Masukkan Nomor Surat (Contoh: 500/001/Pemdes/2026)"
+              class="flex h-11 w-full rounded-xl border border-input bg-background pl-10 pr-3 text-xs sm:text-sm font-mono font-semibold text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs"
+            />
+          </div>
+          <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-5 text-xs font-bold shadow-xs cursor-pointer transition-all shrink-0">
+            Periksa Dokumen
+          </button>
+        </form>
+      </div>
+
+      <!-- Result Container -->
+      <div id="verif-result-container" class="space-y-6">
+        
+        <!-- Loading State -->
+        <div id="verif-loading" class="p-12 text-center bg-card border rounded-3xl space-y-3 shadow-xs">
+          <div class="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p class="text-xs font-semibold text-muted-foreground">Memvalidasi dokumen ke database desa...</p>
+        </div>
+
+        <!-- Valid State Card -->
+        <div id="verif-valid" class="hidden bg-card border-2 border-emerald-500/40 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6 animate-scale-up">
+          
+          <!-- Badge Sukses -->
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b pb-6">
+            <div class="flex items-center gap-3.5">
+              <div class="w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 flex items-center justify-center shrink-0 shadow-inner">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+              </div>
+              <div class="space-y-0.5">
+                <span class="inline-flex items-center rounded-md border px-2.5 py-0.5 text-[10px] font-extrabold bg-emerald-500/15 text-emerald-700 uppercase tracking-widest border-emerald-300">
+                  DOKUMEN ASLI & TERVERIFIKASI
+                </span>
+                <h3 class="font-extrabold text-base sm:text-lg text-foreground leading-tight" id="res-jenis-surat">-</h3>
+                <p class="text-xs text-muted-foreground font-mono" id="res-nomor-surat">-</p>
+              </div>
+            </div>
+            <div class="text-left sm:text-right text-xs shrink-0">
+              <span class="text-muted-foreground block text-[10px]">Status Register:</span>
+              <span class="font-bold text-emerald-600 font-mono text-xs">TERCATAT DALAM ARSIP</span>
+            </div>
+          </div>
+
+          <!-- Rincian Dokumen -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            <div class="bg-muted/30 p-4 rounded-2xl border space-y-1">
+              <span class="text-muted-foreground text-[10px] uppercase font-bold tracking-wider">Nama Pemohon</span>
+              <p class="font-extrabold text-foreground text-sm" id="res-nama">-</p>
+            </div>
+            <div class="bg-muted/30 p-4 rounded-2xl border space-y-1">
+              <span class="text-muted-foreground text-[10px] uppercase font-bold tracking-wider">NIK Pemohon (Disamarkan)</span>
+              <p class="font-mono font-bold text-foreground text-sm" id="res-nik">-</p>
+            </div>
+            <div class="bg-muted/30 p-4 rounded-2xl border space-y-1">
+              <span class="text-muted-foreground text-[10px] uppercase font-bold tracking-wider">Keperluan Dokumen</span>
+              <p class="font-semibold text-foreground" id="res-keperluan">-</p>
+            </div>
+            <div class="bg-muted/30 p-4 rounded-2xl border space-y-1">
+              <span class="text-muted-foreground text-[10px] uppercase font-bold tracking-wider">Diterbitkan Pada</span>
+              <p class="font-semibold text-foreground" id="res-tanggal">-</p>
+            </div>
+          </div>
+
+          <!-- Keterangan Otoritas Desa -->
+          <div class="bg-emerald-500/5 border border-emerald-500/20 p-4 rounded-2xl flex items-start gap-3 text-xs text-emerald-900 leading-relaxed">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-600 shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            <div>
+              Dokumen ini sah dikeluarkan oleh <strong>Pemerintah Desa Puspamukti</strong> atas nama <strong>Kepala Desa Puspamukti (ATANG RIDWAN)</strong> dan memiliki kekuatan hukum administrasi kependudukan yang sah.
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Invalid / Not Found State Card -->
+        <div id="verif-invalid" class="hidden bg-card border-2 border-destructive/40 rounded-3xl p-8 shadow-xl text-center space-y-4 animate-scale-up">
+          <div class="w-16 h-16 rounded-2xl bg-destructive/10 text-destructive border border-destructive/30 flex items-center justify-center mx-auto shadow-inner">
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          </div>
+          <div class="space-y-1">
+            <h3 class="text-lg font-bold text-foreground">Dokumen Tidak Ditemukan / Belum Teregister</h3>
+            <p class="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
+              Nomor surat yang Anda periksa tidak tercatat pada database resmi Desa Puspamukti. Pastikan format nomor yang dimasukkan sudah benar atau hubungi Balai Desa Puspamukti.
+            </p>
+          </div>
+          <div class="pt-2">
+            <a href="/kontak" class="inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline">
+              <span>Hubungi Kontak Pelayanan Desa</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+</Layout>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const nomorParam = urlParams.get('nomor') || '';
+    const form = document.getElementById('search-verif-form');
+    const inputNomor = document.getElementById('input-nomor-surat') as HTMLInputElement;
+
+    const loadingEl = document.getElementById('verif-loading');
+    const validEl = document.getElementById('verif-valid');
+    const invalidEl = document.getElementById('verif-invalid');
+
+    const resJenis = document.getElementById('res-jenis-surat');
+    const resNomor = document.getElementById('res-nomor-surat');
+    const resNama = document.getElementById('res-nama');
+    const resNik = document.getElementById('res-nik');
+    const resKeperluan = document.getElementById('res-keperluan');
+    const resTanggal = document.getElementById('res-tanggal');
+
+    const maskNik = (nik: string) => {
+      if (!nik || nik.length < 8) return nik;
+      return nik.substring(0, 6) + '******' + nik.substring(nik.length - 4);
+    };
+
+    const checkVerification = async (nomorSurat: string) => {
+      if (!nomorSurat || nomorSurat.trim() === '') {
+        loadingEl?.classList.add('hidden');
+        validEl?.classList.add('hidden');
+        invalidEl?.classList.add('hidden');
+        return;
+      }
+
+      loadingEl?.classList.remove('hidden');
+      validEl?.classList.add('hidden');
+      invalidEl?.classList.add('hidden');
+
+      const cleanNomor = nomorSurat.trim();
+
+      let record: any = null;
+
+      // 1. Try local cache first for instant response
+      try {
+        const localSaved = localStorage.getItem('puspamukti_permohonan_surat');
+        if (localSaved) {
+          const list = JSON.parse(localSaved);
+          record = list.find((s: any) => s.nomor_surat && s.nomor_surat.toLowerCase() === cleanNomor.toLowerCase());
+        }
+      } catch {}
+
+      // 2. If not found in local, query Supabase
+      if (!record) {
+        try {
+          const { data, error } = await supabase
+            .from('permohonan_surat')
+            .select('*')
+            .ilike('nomor_surat', cleanNomor)
+            .maybeSingle();
+
+          if (!error && data) {
+            record = data;
+          }
+        } catch (err) {}
+      }
+
+      loadingEl?.classList.add('hidden');
+
+      if (record && record.status === 'Disetujui' || record && record.status === 'Selesai' || record && record.nomor_surat) {
+        if (resJenis) resJenis.textContent = record.jenis_surat || 'Surat Keterangan';
+        if (resNomor) resNomor.textContent = 'Nomor Register: ' + record.nomor_surat;
+        if (resNama) resNama.textContent = record.nama || '-';
+        if (resNik) resNik.textContent = maskNik(record.nik || '');
+        if (resKeperluan) resKeperluan.textContent = record.keperluan || '-';
+        if (resTanggal) resTanggal.textContent = new Date(record.created_at || Date.now()).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+        validEl?.classList.remove('hidden');
+        invalidEl?.classList.add('hidden');
+      } else {
+        validEl?.classList.add('hidden');
+        invalidEl?.classList.remove('hidden');
+      }
+    };
+
+    // Auto check if URL has ?nomor=
+    if (nomorParam) {
+      checkVerification(nomorParam);
+    } else {
+      loadingEl?.classList.add('hidden');
+    }
+
+    form?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const val = inputNomor?.value.trim() || '';
+      if (!val) return;
+
+      // Update URL query param cleanly without reload
+      const newUrl = `${window.location.pathname}?nomor=${encodeURIComponent(val)}`;
+      window.history.pushState({ path: newUrl }, '', newUrl);
+
+      checkVerification(val);
+    });
+  });
+</script>

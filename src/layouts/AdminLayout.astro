@@ -1,0 +1,313 @@
+---
+import '../styles/global.css';
+
+interface Props {
+	title: string;
+}
+
+const { title } = Astro.props;
+const pathname = Astro.url.pathname;
+const isActive = (path: string) => {
+  if (path === '/admin') return pathname === '/admin' || pathname === '/admin/';
+  return pathname.startsWith(path);
+};
+---
+<!doctype html>
+<html lang="id">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="icon" type="image/webp" href="/logodesa.webp" />
+		<title>{title} | Panel Admin Desa Puspamukti</title>
+
+		<!-- Immediate Zero-Delay Admin Auth Gate (Synchronous) -->
+		<script is:inline>
+			(function() {
+				try {
+					var adminSession = localStorage.getItem('admin_session');
+					if (!adminSession) {
+						// Clean any stale auth tokens completely
+						for (var i = localStorage.length - 1; i >= 0; i--) {
+							var k = localStorage.key(i);
+							if (k && (k.indexOf('auth-token') !== -1 || k.indexOf('supabase') !== -1)) {
+								localStorage.removeItem(k);
+							}
+						}
+						window.location.replace('/admin/login');
+					}
+				} catch (e) {
+					window.location.replace('/admin/login');
+				}
+			})();
+		</script>
+	</head>
+	<body class="min-h-screen bg-muted/20 font-sans antialiased text-foreground flex overflow-hidden">
+		
+		<!-- Mobile Drawer Backdrop Overlay -->
+		<div id="mobile-drawer-backdrop" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-40 hidden md:hidden transition-opacity duration-200 opacity-0"></div>
+
+		<!-- Sidebar (Desktop & Mobile Drawer) -->
+		<aside id="admin-sidebar" class="fixed md:static inset-y-0 left-0 -translate-x-full md:translate-x-0 flex flex-col w-64 bg-card border-r shadow-lg md:shadow-sm z-50 h-screen transition-transform duration-200 ease-in-out shrink-0">
+			<!-- Sidebar Header -->
+			<div class="h-16 flex items-center justify-between px-6 border-b shrink-0">
+				<div class="flex items-center gap-3">
+					<div class="w-9 h-9 rounded-xl bg-background border shadow-xs p-1 flex items-center justify-center">
+						<img src="/logodesa.webp" alt="Logo Desa" width="36" height="36" class="w-full h-full object-contain" />
+					</div>
+					<div class="flex flex-col justify-center">
+						<span class="font-bold text-sm leading-tight text-foreground">Portal Admin</span>
+						<span class="text-[10px] font-bold text-primary uppercase tracking-wider">Desa Puspamukti</span>
+					</div>
+				</div>
+				<!-- Mobile Close Button -->
+				<button id="mobile-drawer-close-btn" class="md:hidden p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" aria-label="Tutup Menu">
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+				</button>
+			</div>
+			
+			<!-- Nav Links -->
+			<nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1 text-sm custom-scrollbar" id="sidebar-nav">
+				<a href="/admin" class={`sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${isActive('/admin') ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+					<span class="truncate">Dasbor Utama</span>
+				</a>
+				
+				<!-- Group 1: Konten & Informasi -->
+				<div class="pt-5 pb-1.5 px-3 text-[10px] font-extrabold text-muted-foreground/70 uppercase tracking-wider">Manajemen Konten</div>
+				
+				<a href="/admin/berita" class={`sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${isActive('/admin/berita') ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
+					<span class="truncate">Berita & Pengumuman</span>
+				</a>
+				<a href="/admin/agenda" class={`sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${isActive('/admin/agenda') ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+					<span class="truncate">Agenda Kegiatan</span>
+				</a>
+				<a href="/admin/bencana" class={`sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${isActive('/admin/bencana') ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+					<span class="truncate">Siaga Bencana</span>
+				</a>
+				<a href="/admin/regulasi" class={`sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${isActive('/admin/regulasi') ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+					<span class="truncate">Dokumen Regulasi</span>
+				</a>
+				<a href="/admin/wisata" class={`sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${isActive('/admin/wisata') ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+					<span class="truncate">Desa Wisata</span>
+				</a>
+
+				<!-- Group 2: Pelayanan & Suara Warga -->
+				<div class="pt-5 pb-1.5 px-3 text-[10px] font-extrabold text-muted-foreground/70 uppercase tracking-wider">Layanan & Aspirasi</div>
+				
+				<a href="/admin/surat" class={`sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${isActive('/admin/surat') ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/></svg>
+					<span class="truncate">Permohonan E-Surat</span>
+				</a>
+				<a href="/admin/layanan" class={`sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${isActive('/admin/layanan') ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg>
+					<span class="truncate">Layanan Publik</span>
+				</a>
+				<a href="/admin/pengaduan" class={`sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${isActive('/admin/pengaduan') ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+					<span class="truncate">Kotak Pengaduan</span>
+				</a>
+				
+				<!-- Group 3: Data Master Desa -->
+				<div class="pt-5 pb-1.5 px-3 text-[10px] font-extrabold text-muted-foreground/70 uppercase tracking-wider">Data & Keuangan Desa</div>
+				
+				<a href="/admin/warga" class={`sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${isActive('/admin/warga') ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+					<span class="truncate">Database Warga</span>
+				</a>
+				<a href="/admin/transparansi" class={`sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${isActive('/admin/transparansi') ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+					<span class="truncate">Transparansi Anggaran</span>
+				</a>
+				<a href="/admin/statistik" class={`sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${isActive('/admin/statistik') ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg>
+					<span class="truncate">Data Statistik</span>
+				</a>
+				<a href="/admin/peta" class={`sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${isActive('/admin/peta') ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+					<span class="truncate">Peta Wilayah</span>
+				</a>
+				<a href="/admin/zona-khusus" class={`sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${isActive('/admin/zona-khusus') ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+					<span class="truncate">Zona Khusus</span>
+				</a>
+				<a href="/admin/aparatur" class={`sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${isActive('/admin/aparatur') ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+					<span class="truncate">Aparatur & LKD</span>
+				</a>
+				<a href="/admin/bumdes" class={`sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${isActive('/admin/bumdes') ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+					<span class="truncate">Katalog BUMDes</span>
+				</a>
+
+				<!-- Group 4: Pengaturan Sistem -->
+				<div class="pt-5 pb-1.5 px-3 text-[10px] font-extrabold text-muted-foreground/70 uppercase tracking-wider">Bantuan & Pengaturan</div>
+				
+				<a href="/admin/panduan" class={`sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${isActive('/admin/panduan') ? 'bg-primary text-primary-foreground shadow-xs' : 'text-primary bg-primary/10 hover:bg-primary/20 font-bold'}`}>
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>
+					<span class="truncate">📖 Buku Panduan Desa</span>
+				</a>
+				<a href="/admin/pengguna" class={`sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${isActive('/admin/pengguna') ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+					<span class="truncate">Akses Administrator</span>
+				</a>
+			</nav>
+
+			<!-- Sidebar Footer -->
+			<div class="p-3 border-t bg-muted/20 shrink-0">
+				<a href="/" target="_blank" class="flex items-center justify-center gap-2 w-full px-3 py-2 text-xs font-bold text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-colors border border-border/50 hover:border-primary/30">
+					<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x1="21" y1="14" y2="3"/></svg>
+					Pratinjau Web Publik
+				</a>
+			</div>
+		</aside>
+
+		<!-- Main Content Wrapper -->
+		<div class="flex-1 flex flex-col h-screen overflow-hidden min-w-0">
+			<!-- Topbar -->
+			<header class="h-16 bg-card border-b flex items-center justify-between px-4 sm:px-6 shadow-xs z-10 shrink-0">
+				<!-- Left: Mobile Menu Toggle & Breadcrumbs -->
+				<div class="flex items-center gap-3">
+					<button id="mobile-menu-toggle-btn" class="md:hidden p-2 -ml-1 text-muted-foreground hover:text-foreground rounded-xl hover:bg-muted transition-colors" aria-label="Buka Menu">
+						<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+					</button>
+					
+					<!-- Breadcrumbs / Page Context -->
+					<div class="flex items-center gap-2 text-xs text-muted-foreground font-medium">
+						<span class="hidden sm:inline">Admin</span>
+						<span class="hidden sm:inline">/</span>
+						<span class="text-foreground font-semibold text-sm truncate max-w-[200px] sm:max-w-xs">{title}</span>
+					</div>
+				</div>
+
+				<!-- Right: User Info & Actions -->
+				<div class="flex items-center gap-3 sm:gap-4">
+					<a href="/admin/panduan" class={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border transition-colors ${isActive('/admin/panduan') ? 'bg-primary text-primary-foreground border-primary shadow-xs' : 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20'}`} title="Buka Buku Panduan Operasional">
+						<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>
+						<span>Buku Panduan</span>
+					</a>
+
+					<a href="/" target="_blank" class="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-primary px-2.5 py-1.5 rounded-lg hover:bg-muted transition-colors" title="Buka Halaman Publik">
+						<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+						Portal Publik
+					</a>
+
+					<div class="h-4 w-px bg-border hidden sm:block"></div>
+
+					<!-- User Profile Info -->
+					<div class="text-right hidden sm:block">
+						<p class="text-xs font-bold leading-tight truncate max-w-[160px]" id="user-name-display">Administrator</p>
+						<p class="text-[10px] text-muted-foreground mt-0.5" id="user-role-display">Aparatur Desa</p>
+					</div>
+
+					<div class="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm shadow-xs border-2 border-background uppercase shrink-0" id="user-initial-display">
+						A
+					</div>
+
+					<button id="logout-btn" class="text-muted-foreground hover:text-destructive p-2 rounded-xl hover:bg-destructive/10 transition-colors flex items-center gap-1.5 text-xs font-semibold cursor-pointer" title="Keluar dari Panel Admin">
+						<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x1="9" y1="12" y2="12"/></svg>
+						<span class="hidden md:inline">Keluar</span>
+					</button>
+				</div>
+			</header>
+
+			<!-- Page Content -->
+			<main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar">
+				<slot />
+			</main>
+		</div>
+
+		<!-- Client Side Script for Real Auth & Drawer -->
+		<script>
+			import { supabase } from '../lib/supabase';
+
+			document.addEventListener('DOMContentLoaded', async () => {
+				// 1. Mobile Drawer Toggle Logic
+				const toggleBtn = document.getElementById('mobile-menu-toggle-btn');
+				const closeBtn = document.getElementById('mobile-drawer-close-btn');
+				const backdrop = document.getElementById('mobile-drawer-backdrop');
+				const sidebar = document.getElementById('admin-sidebar');
+
+				function openDrawer() {
+					if (!sidebar || !backdrop) return;
+					sidebar.classList.remove('-translate-x-full');
+					sidebar.classList.add('translate-x-0');
+					backdrop.classList.remove('hidden');
+					setTimeout(() => backdrop.classList.add('opacity-100'), 10);
+				}
+
+				function closeDrawer() {
+					if (!sidebar || !backdrop) return;
+					sidebar.classList.add('-translate-x-full');
+					sidebar.classList.remove('translate-x-0');
+					backdrop.classList.remove('opacity-100');
+					setTimeout(() => backdrop.classList.add('hidden'), 200);
+				}
+
+				toggleBtn?.addEventListener('click', openDrawer);
+				closeBtn?.addEventListener('click', closeDrawer);
+				backdrop?.addEventListener('click', closeDrawer);
+
+				// Close drawer on ESC key
+				document.addEventListener('keydown', (e) => {
+					if (e.key === 'Escape') closeDrawer();
+				});
+
+				// 2. Strict Auth Guard: Check real user session
+				const { data: { session } } = await supabase.auth.getSession();
+				const localAdminSessionStr = localStorage.getItem('admin_session');
+
+				if (!session && !localAdminSessionStr) {
+					// Not logged in -> Kick to /admin/login immediately!
+					window.location.href = '/admin/login';
+					return;
+				}
+
+				if (session && session.user) {
+					const email = session.user.email || '';
+					const name = session.user.user_metadata?.name || email.split('@')[0] || 'Admin';
+					const initial = name.charAt(0).toUpperCase();
+
+					const nameEl = document.getElementById('user-name-display');
+					const roleEl = document.getElementById('user-role-display');
+					const initialEl = document.getElementById('user-initial-display');
+
+					if (nameEl) nameEl.textContent = name;
+					if (roleEl) roleEl.textContent = email;
+					if (initialEl) initialEl.textContent = initial;
+				} else if (localAdminSessionStr) {
+					try {
+						const adminObj = JSON.parse(localAdminSessionStr);
+						const nameEl = document.getElementById('user-name-display');
+						const roleEl = document.getElementById('user-role-display');
+						const initialEl = document.getElementById('user-initial-display');
+
+						if (nameEl) nameEl.textContent = adminObj.name || 'Administrator';
+						if (roleEl) roleEl.textContent = adminObj.role || 'Aparatur Desa';
+						if (initialEl) initialEl.textContent = (adminObj.name || 'A').charAt(0).toUpperCase();
+					} catch {}
+				}
+
+				// 3. Logout Handler
+				const logoutBtn = document.getElementById('logout-btn');
+				if (logoutBtn) {
+					logoutBtn.addEventListener('click', async (e) => {
+						e.preventDefault();
+						if (confirm('Apakah Anda yakin ingin keluar dari panel admin?')) {
+							localStorage.removeItem('admin_session');
+							try {
+								await supabase.auth.signOut();
+							} catch {}
+							window.location.href = '/admin/login';
+						}
+					});
+				}
+			});
+		</script>
+	</body>
+</html>
+

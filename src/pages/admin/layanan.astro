@@ -1,0 +1,564 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Fetch all Kelembagaan & Layanan from Supabase
+const { data: dbItems } = await supabase
+  .from('layanan_kelembagaan')
+  .select('*')
+  .order('created_at', { ascending: true });
+
+const items = dbItems || [];
+---
+
+<AdminLayout title="Kelola Kelembagaan & Layanan">
+  <div class="space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight text-foreground">Kelembagaan & Layanan</h1>
+        <p class="text-muted-foreground mt-1">Kelola lembaga desa, kelompok masyarakat, serta persyaratan layanan surat warga.</p>
+      </div>
+      <button 
+        id="add-item-btn"
+        class="inline-flex items-center justify-center rounded-xl text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 gap-2 shadow-md cursor-pointer"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+        Tambah Lembaga / Layanan
+      </button>
+    </div>
+
+    <!-- Table List -->
+    <div class="bg-card border rounded-2xl shadow-sm overflow-hidden animate-fade-in">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+          <thead class="bg-muted/50 text-muted-foreground font-semibold border-b">
+            <tr>
+              <th class="px-6 py-4">Nama</th>
+              <th class="px-6 py-4">Tipe</th>
+              <th class="px-6 py-4">Deskripsi Peran</th>
+              <th class="px-6 py-4">Bagan / Logo</th>
+              <th class="px-6 py-4 text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y" id="layanan-table-body">
+            {items.length === 0 ? (
+              <tr>
+                <td colspan="5" class="px-6 py-8 text-center text-muted-foreground">
+                  Belum ada lembaga desa atau layanan publik yang didaftarkan. Silakan tambah data baru.
+                </td>
+              </tr>
+            ) : (
+              items.map((item) => (
+                <tr class="hover:bg-muted/30 transition-colors">
+                  <td class="px-6 py-4 font-bold text-foreground flex items-center gap-3">
+                    {item.tipe === 'Kelembagaan' && item.icon && (item.icon.startsWith('http') || item.icon.startsWith('/')) ? (
+                      <img src={item.icon} alt={item.nama} class="w-8 h-8 rounded-lg object-cover border shrink-0 bg-muted" />
+                    ) : item.tipe === 'Kelembagaan' ? (
+                      <div class="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0 border">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                      </div>
+                    ) : null}
+                    <span>{item.nama}</span>
+                  </td>
+                  <td class="px-6 py-4">
+                    <span class={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                      item.tipe === 'Kelembagaan' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' : 'bg-green-500/10 text-green-600 border-green-500/20'
+                    }`}>
+                      {item.tipe}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 text-muted-foreground max-w-xs truncate">{item.desc_singkat}</td>
+                  <td class="px-6 py-4 text-xs font-semibold text-foreground">
+                    {item.tipe === 'Kelembagaan' ? (
+                      <div class="flex gap-2">
+                        <span class="text-xs text-muted-foreground">Logo: {item.icon ? '✅' : '❌'}</span>
+                        <span class="text-xs text-muted-foreground">Bagan: {item.bagan_url ? '✅' : '❌'}</span>
+                      </div>
+                    ) : (
+                      item.syarat ? item.syarat.join(', ') : '-'
+                    )}
+                  </td>
+                  <td class="px-6 py-4 text-right whitespace-nowrap">
+                    <button 
+                      class="edit-item-btn text-primary hover:underline text-xs font-bold mr-3 cursor-pointer"
+                      data-id={item.id}
+                      data-nama={item.nama}
+                      data-tipe={item.tipe}
+                      data-desc={item.desc_singkat}
+                      data-icon={item.icon || ''}
+                      data-bagan={item.bagan_url || ''}
+                      data-pengurus={item.pengurus ? item.pengurus.join(', ') : ''}
+                      data-syarat={item.syarat ? item.syarat.join(', ') : ''}
+                    >
+                      Edit
+                    </button>
+                    <button 
+                      class="delete-item-btn text-destructive hover:underline text-xs font-bold cursor-pointer"
+                      data-id={item.id}
+                      data-nama={item.nama}
+                    >
+                      Hapus
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Modal (Add/Edit) -->
+  <div id="layanan-modal" class="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-card border w-full max-w-md rounded-3xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="px-6 py-5 border-b flex justify-between items-center bg-muted/20">
+        <h3 id="modal-title" class="font-bold text-lg text-foreground font-sans">Tambah Kelembagaan / Layanan</h3>
+        <button id="close-modal-btn" class="p-1.5 rounded-lg hover:bg-muted text-muted-foreground">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="layanan-form" class="p-6 space-y-4 overflow-y-auto flex-1">
+        <input type="hidden" id="layanan-id" />
+        <input type="hidden" id="layanan-icon-existing" />
+        <input type="hidden" id="layanan-bagan-existing" />
+        
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1.5">
+            <label for="layanan-nama" class="text-xs font-bold text-foreground uppercase">Nama Lembaga / Layanan</label>
+            <input 
+              type="text" 
+              id="layanan-nama" 
+              placeholder="Contoh: Karang Taruna / SKU" 
+              class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+              required
+            />
+          </div>
+
+          <div class="space-y-1.5">
+            <label for="layanan-tipe" class="text-xs font-bold text-foreground uppercase">Tipe Data</label>
+            <select 
+              id="layanan-tipe" 
+              class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+              required
+            >
+              <option value="Kelembagaan">Kelembagaan</option>
+              <option value="Layanan Publik">Layanan Publik</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4">
+          <!-- Logo Kelembagaan (File Upload) -->
+          <div class="space-y-1.5" id="logo-group">
+            <label for="layanan-logo-file" class="text-xs font-bold text-foreground uppercase">Logo Lembaga (Pilih File Gambar)</label>
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 bg-muted border rounded-xl flex items-center justify-center overflow-hidden shrink-0" id="layanan-logo-preview">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              </div>
+              <div class="flex flex-col gap-1 w-full">
+                <input 
+                  type="file" 
+                  id="layanan-logo-file" 
+                  accept="image/*"
+                  class="block w-full text-xs text-muted-foreground file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 cursor-pointer"
+                />
+                <button type="button" id="delete-logo-btn" class="text-[10px] text-destructive hover:underline font-bold w-fit cursor-pointer">
+                  Hapus Logo
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bagan Kelembagaan (File Upload) -->
+          <div class="space-y-1.5" id="bagan-group">
+            <label for="layanan-bagan-file" class="text-xs font-bold text-foreground uppercase">Bagan Struktur Lembaga (File Gambar)</label>
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 bg-muted border rounded-xl flex items-center justify-center overflow-hidden shrink-0" id="layanan-bagan-preview">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground"><polygon points="6 2 18 2 18 6 6 6 6 2"/><rect width="6" height="4" x="2" y="14" rx="1"/><rect width="6" height="4" x="9" y="14" rx="1"/><rect width="6" height="4" x="16" y="14" rx="1"/><path d="M12 6v8"/><path d="M5 10h14v4"/></svg>
+              </div>
+              <div class="flex flex-col gap-1 w-full">
+                <input 
+                  type="file" 
+                  id="layanan-bagan-file" 
+                  accept="image/*"
+                  class="block w-full text-xs text-muted-foreground file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 cursor-pointer"
+                />
+                <button type="button" id="delete-bagan-btn" class="text-[10px] text-destructive hover:underline font-bold w-fit cursor-pointer">
+                  Hapus Bagan
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Icon Layanan Publik -->
+          <div class="space-y-1.5 hidden" id="icon-group">
+            <label for="layanan-icon" class="text-xs font-bold text-foreground uppercase">Desain Ikon Layanan</label>
+            <select 
+              id="layanan-icon" 
+              class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+            >
+              <option value="KTP/KK">📄 Kertas/KTP (KTP/KK)</option>
+              <option value="Usaha (SKU)">💼 Tas Usaha (SKU)</option>
+              <option value="Nikah (NA)">💖 Hati/Asmara (Nikah)</option>
+              <option value="SKCK">🛡️ Perisai Pengamanan (SKCK)</option>
+              <option value="SKTM">📖 Buku Terbuka (SKTM)</option>
+              <option value="Pertanahan">🏢 Gedung/Lahan (AJB/PTSL)</option>
+            </select>
+          </div>
+
+          <div class="space-y-1.5">
+            <label for="layanan-desc" class="text-xs font-bold text-foreground uppercase">Deskripsi Singkat Peran / Fungsi</label>
+            <textarea 
+              id="layanan-desc" 
+              rows="2" 
+              placeholder="Tulis deskripsi ringkas tentang layanan atau peran lembaga..."
+              class="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary resize-none"
+              required
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- Dynamic inputs based on Type -->
+        <div class="space-y-1.5" id="pengurus-group">
+          <label for="layanan-pengurus" class="text-xs font-bold text-foreground uppercase">Susunan Pengurus (Pisahkan dengan tanda koma)</label>
+          <input 
+            type="text" 
+            id="layanan-pengurus" 
+            placeholder="Contoh: Ketua: Bapak A, Sekretaris: Ibu B" 
+            class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+          />
+        </div>
+
+        <div class="space-y-1.5 hidden" id="syarat-group">
+          <label for="layanan-syarat" class="text-xs font-bold text-foreground uppercase">Persyaratan Berkas (Pisahkan dengan tanda koma)</label>
+          <textarea 
+            id="layanan-syarat" 
+            rows="3" 
+            placeholder="Contoh: Fotokopi KTP, Pengantar RT/RW, KK" 
+            class="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary resize-none"
+          ></textarea>
+        </div>
+
+        <div class="pt-4 border-t flex justify-end gap-3">
+          <button 
+            type="button" 
+            id="cancel-modal-btn" 
+            class="inline-flex items-center justify-center rounded-xl border border-input bg-background hover:bg-accent text-sm font-bold h-11 px-4 cursor-pointer"
+          >
+            Batal
+          </button>
+          <button 
+            type="submit" 
+            id="submit-modal-btn" 
+            class="inline-flex items-center justify-center rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold h-11 px-6 shadow-md cursor-pointer"
+          >
+            Simpan Data
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { supabase } from '../../lib/supabase';
+
+  const BUCKET_NAME = 'desa-media';
+
+  const modal = document.getElementById('layanan-modal');
+  const modalTitle = document.getElementById('modal-title');
+  const form = document.getElementById('layanan-form') as HTMLFormElement;
+  
+  const inputId = document.getElementById('layanan-id') as HTMLInputElement;
+  const inputNama = document.getElementById('layanan-nama') as HTMLInputElement;
+  const selectTipe = document.getElementById('layanan-tipe') as HTMLSelectElement;
+  const selectIcon = document.getElementById('layanan-icon') as HTMLSelectElement;
+  const inputIconExisting = document.getElementById('layanan-icon-existing') as HTMLInputElement;
+  const inputBaganExisting = document.getElementById('layanan-bagan-existing') as HTMLInputElement;
+  const textareaDesc = document.getElementById('layanan-desc') as HTMLTextAreaElement;
+  const inputPengurus = document.getElementById('layanan-pengurus') as HTMLInputElement;
+  const textareaSyarat = document.getElementById('layanan-syarat') as HTMLTextAreaElement;
+
+  const inputLogoFile = document.getElementById('layanan-logo-file') as HTMLInputElement;
+  const previewLogo = document.getElementById('layanan-logo-preview');
+  const deleteLogoBtn = document.getElementById('delete-logo-btn');
+
+  const inputBaganFile = document.getElementById('layanan-bagan-file') as HTMLInputElement;
+  const previewBagan = document.getElementById('layanan-bagan-preview');
+  const deleteBaganBtn = document.getElementById('delete-bagan-btn');
+
+  const logoGroup = document.getElementById('logo-group');
+  const baganGroup = document.getElementById('bagan-group');
+  const iconGroup = document.getElementById('icon-group');
+  const pengurusGroup = document.getElementById('pengurus-group');
+  const syaratGroup = document.getElementById('syarat-group');
+
+  const addBtn = document.getElementById('add-item-btn');
+  const closeBtn = document.getElementById('close-modal-btn');
+  const cancelBtn = document.getElementById('cancel-modal-btn');
+  const submitBtn = document.getElementById('submit-modal-btn');
+
+  // Preview Logo File Change
+  if (inputLogoFile) {
+    inputLogoFile.addEventListener('change', () => {
+      const file = inputLogoFile.files?.[0];
+      if (file && previewLogo) {
+        const url = URL.createObjectURL(file);
+        previewLogo.innerHTML = `<img src="${url}" class="w-full h-full object-cover rounded-lg" />`;
+      }
+    });
+  }
+
+  // Preview Bagan File Change
+  if (inputBaganFile) {
+    inputBaganFile.addEventListener('change', () => {
+      const file = inputBaganFile.files?.[0];
+      if (file && previewBagan) {
+        const url = URL.createObjectURL(file);
+        previewBagan.innerHTML = `<img src="${url}" class="w-full h-full object-cover rounded-lg" />`;
+      }
+    });
+  }
+
+  // Handle Delete Logo Click
+  if (deleteLogoBtn) {
+    deleteLogoBtn.addEventListener('click', () => {
+      if (inputLogoFile) inputLogoFile.value = "";
+      if (inputIconExisting) inputIconExisting.value = "";
+      if (previewLogo) {
+        previewLogo.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>`;
+      }
+    });
+  }
+
+  // Handle Delete Bagan Click
+  if (deleteBaganBtn) {
+    deleteBaganBtn.addEventListener('click', () => {
+      if (inputBaganFile) inputBaganFile.value = "";
+      if (inputBaganExisting) inputBaganExisting.value = "";
+      if (previewBagan) {
+        previewBagan.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground"><polygon points="6 2 18 2 18 6 6 6 6 2"/><rect width="6" height="4" x="2" y="14" rx="1"/><rect width="6" height="4" x="9" y="14" rx="1"/><rect width="6" height="4" x="16" y="14" rx="1"/><path d="M12 6v8"/><path d="M5 10h14v4"/></svg>`;
+      }
+    });
+  }
+
+  // Upload helper to Supabase Storage
+  const uploadImage = async (file: File, folder: string): Promise<string> => {
+    const ext = file.name.split('.').pop();
+    const cleanName = `${folder}/${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
+
+    const { data, error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(cleanName, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) throw error;
+
+    const { data: urlData } = supabase.storage
+      .from(BUCKET_NAME)
+      .getPublicUrl(cleanName);
+
+    return urlData.publicUrl;
+  };
+
+  // Toggle groups based on Type selection
+  const toggleFields = (tipe: string) => {
+    if (tipe === 'Kelembagaan') {
+      logoGroup?.classList.remove('hidden');
+      baganGroup?.classList.remove('hidden');
+      iconGroup?.classList.add('hidden');
+      pengurusGroup?.classList.remove('hidden');
+      syaratGroup?.classList.add('hidden');
+      inputPengurus.setAttribute('required', 'true');
+      textareaSyarat.removeAttribute('required');
+    } else {
+      logoGroup?.classList.add('hidden');
+      baganGroup?.classList.add('hidden');
+      iconGroup?.classList.remove('hidden');
+      pengurusGroup?.classList.add('hidden');
+      syaratGroup?.classList.remove('hidden');
+      inputPengurus.removeAttribute('required');
+      textareaSyarat.setAttribute('required', 'true');
+    }
+  };
+
+  if (selectTipe) {
+    selectTipe.addEventListener('change', (e) => {
+      const val = (e.target as HTMLSelectElement).value;
+      toggleFields(val);
+    });
+  }
+
+  const openModal = (title: string, id = "", nama = "", tipe = "Kelembagaan", desc = "", icon = "", bagan = "", pengurus = "", syarat = "") => {
+    if (!modal) return;
+    if (modalTitle) modalTitle.innerText = title;
+    
+    inputId.value = id;
+    inputNama.value = nama;
+    selectTipe.value = tipe;
+    textareaDesc.value = desc;
+    inputPengurus.value = pengurus;
+    textareaSyarat.value = syarat;
+    inputIconExisting.value = icon;
+    inputBaganExisting.value = bagan;
+
+    if (inputLogoFile) inputLogoFile.value = "";
+    if (inputBaganFile) inputBaganFile.value = "";
+
+    if (tipe === 'Kelembagaan') {
+      if (icon && (icon.startsWith('http') || icon.startsWith('/')) && previewLogo) {
+        previewLogo.innerHTML = `<img src="${icon}" class="w-full h-full object-cover rounded-lg" />`;
+      } else if (previewLogo) {
+        previewLogo.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>`;
+      }
+
+      if (bagan && (bagan.startsWith('http') || bagan.startsWith('/')) && previewBagan) {
+        previewBagan.innerHTML = `<img src="${bagan}" class="w-full h-full object-cover rounded-lg" />`;
+      } else if (previewBagan) {
+        previewBagan.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground"><polygon points="6 2 18 2 18 6 6 6 6 2"/><rect width="6" height="4" x="2" y="14" rx="1"/><rect width="6" height="4" x="9" y="14" rx="1"/><rect width="6" height="4" x="16" y="14" rx="1"/><path d="M12 6v8"/><path d="M5 10h14v4"/></svg>`;
+      }
+    } else {
+      selectIcon.value = icon || 'KTP/KK';
+    }
+
+    toggleFields(tipe);
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  };
+
+  const closeModal = () => {
+    if (!modal) return;
+    modal.classList.remove('flex');
+    modal.classList.add('hidden');
+    form.reset();
+  };
+
+  if (addBtn) addBtn.addEventListener('click', () => openModal("Tambah Lembaga / Layanan"));
+  if (closeBtn) closeBtn.addEventListener('click', closeModal);
+  if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const id = inputId.value;
+      const tipe = selectTipe.value;
+      const fileLogo = inputLogoFile.files?.[0];
+      const fileBagan = inputBaganFile.files?.[0];
+      
+      const pengurusArray = inputPengurus.value 
+        ? inputPengurus.value.split(',').map(s => s.trim()).filter(Boolean) 
+        : null;
+
+      const syaratArray = textareaSyarat.value 
+        ? textareaSyarat.value.split(',').map(s => s.trim()).filter(Boolean) 
+        : null;
+
+      if (submitBtn) {
+        submitBtn.innerText = "Menyimpan...";
+        submitBtn.setAttribute('disabled', 'true');
+      }
+
+      try {
+        let iconValue = inputIconExisting.value || null;
+        let baganValue = inputBaganExisting.value || null;
+
+        if (tipe === 'Layanan Publik') {
+          iconValue = selectIcon.value;
+        } else if (tipe === 'Kelembagaan') {
+          if (fileLogo) {
+            submitBtn.innerText = "Mengunggah Logo...";
+            iconValue = await uploadImage(fileLogo, 'kelembagaan');
+          }
+          if (fileBagan) {
+            submitBtn.innerText = "Mengunggah Bagan...";
+            baganValue = await uploadImage(fileBagan, 'bagan-lkd');
+          }
+        }
+
+        const payload = {
+          nama: inputNama.value,
+          tipe,
+          desc_singkat: textareaDesc.value,
+          icon: iconValue,
+          bagan_url: baganValue,
+          pengurus: tipe === 'Kelembagaan' ? pengurusArray : null,
+          syarat: tipe === 'Layanan Publik' ? syaratArray : null
+        };
+
+        if (id) {
+          const { error } = await supabase
+            .from('layanan_kelembagaan')
+            .update(payload)
+            .eq('id', parseInt(id));
+
+          if (error) throw error;
+          alert("Data berhasil diperbarui!");
+        } else {
+          const { error } = await supabase
+            .from('layanan_kelembagaan')
+            .insert([payload]);
+
+          if (error) throw error;
+          alert("Data baru berhasil ditambahkan!");
+        }
+        window.location.reload();
+      } catch (err: any) {
+        alert("Gagal menyimpan data: " + err.message);
+      } finally {
+        if (submitBtn) {
+          submitBtn.innerText = "Simpan Data";
+          submitBtn.removeAttribute('disabled');
+        }
+      }
+    });
+  }
+
+  // Edit / Delete Actions
+  const editBtns = document.querySelectorAll('.edit-item-btn');
+  editBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const el = e.currentTarget as HTMLButtonElement;
+      const id = el.getAttribute('data-id') || "";
+      const nama = el.getAttribute('data-nama') || "";
+      const tipe = el.getAttribute('data-tipe') || "Kelembagaan";
+      const desc = el.getAttribute('data-desc') || "";
+      const icon = el.getAttribute('data-icon') || "";
+      const bagan = el.getAttribute('data-bagan') || "";
+      const pengurus = el.getAttribute('data-pengurus') || "";
+      const syarat = el.getAttribute('data-syarat') || "";
+
+      openModal("Edit Kelembagaan / Layanan", id, nama, tipe, desc, icon, bagan, pengurus, syarat);
+    });
+  });
+
+  // Delete Action
+  const deleteBtns = document.querySelectorAll('.delete-item-btn');
+  deleteBtns.forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const el = e.currentTarget as HTMLButtonElement;
+      const id = el.getAttribute('data-id');
+      const nama = el.getAttribute('data-nama');
+      if (!id) return;
+
+      if (confirm(`Apakah Anda yakin ingin menghapus "${nama}"?`)) {
+        const { error } = await supabase
+          .from('layanan_kelembagaan')
+          .delete()
+          .eq('id', parseInt(id));
+
+        if (error) {
+          alert("Gagal menghapus data: " + error.message);
+        } else {
+          alert("Data berhasil dihapus!");
+          window.location.reload();
+        }
+      }
+    });
+  });
+</script>

@@ -1,0 +1,492 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { supabase } from '../lib/supabase';
+
+// Fetch contact settings from Supabase
+const { data: dbKontak } = await supabase
+  .from('pengaturan_kontak')
+  .select('*')
+  .eq('id', 1)
+  .single();
+
+// Fallback contact
+const kontak = dbKontak || {
+  alamat: "Jl. Raya Desa Puspamukti No. 1, Kec. Cigalontang, Kab. Tasikmalaya, Jawa Barat 46463",
+  email: "puspamuktidesa@gmail.com",
+  telepon: "0812-3456-7890",
+  gmaps_link: "https://maps.google.com/?q=Desa+Puspamukti+Cigalontang"
+};
+
+// Fetch map details to load the same interactive map as /informasi/peta
+const { data: dbLokasi } = await supabase
+  .from('peta_lokasi')
+  .select('*');
+
+const { data: dbSettings } = await supabase
+  .from('pengaturan_peta')
+  .select('*')
+  .eq('id', 1)
+  .single();
+
+const lokasiList = dbLokasi || [];
+const dbGeojson = dbSettings?.batas_geojson || null;
+---
+
+<Layout title="Kontak & Pengaduan - Desa Puspamukti">
+  <!-- CSS Leaflet CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+  <div class="container mx-auto px-4 max-w-screen-xl py-12 md:py-20 space-y-12">
+    
+    <!-- Hero Section -->
+    <div class="text-center max-w-3xl mx-auto space-y-6">
+      <div class="inline-flex items-center rounded-full border px-3 py-1 text-sm font-semibold border-primary/20 bg-primary/10 text-primary mb-2">
+        Hubungi Kami
+      </div>
+      <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-foreground">
+        Kontak & Pengaduan Warga
+      </h1>
+      <p class="text-lg text-muted-foreground leading-relaxed">
+        Pemerintah Desa Puspamukti selalu terbuka untuk menerima aspirasi, keluhan, dan masukan dari masyarakat demi terwujudnya pembangunan desa yang lebih baik.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start pt-8">
+      
+      <!-- Kontak Info (Kiri) -->
+      <div class="lg:col-span-5 space-y-8">
+        
+        <div class="bg-card border shadow-sm rounded-3xl p-8 space-y-8 animate-fade-in">
+          <h3 class="text-2xl font-bold text-foreground">Informasi Kontak</h3>
+          
+          <div class="space-y-6">
+            <!-- Alamat -->
+            <div class="flex gap-4">
+              <div class="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              </div>
+              <div>
+                <h4 class="font-bold text-foreground">Alamat Kantor Desa</h4>
+                <p id="kontak-alamat" class="text-sm text-muted-foreground mt-1 leading-relaxed">{kontak.alamat}</p>
+              </div>
+            </div>
+            
+            <!-- Email -->
+            <div class="flex gap-4">
+              <div class="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              </div>
+              <div>
+                <h4 class="font-bold text-foreground">Email Resmi</h4>
+                <p id="kontak-email" class="text-sm text-muted-foreground mt-1">{kontak.email}</p>
+              </div>
+            </div>
+            
+            <!-- Telepon -->
+            <div class="flex gap-4">
+              <div class="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
+              </div>
+              <div>
+                <h4 class="font-bold text-foreground">Nomor Layanan / WhatsApp</h4>
+                <p id="kontak-telepon" class="text-sm text-muted-foreground mt-1">{kontak.telepon}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Peta Wilayah Leaflet (Sama dengan /informasi/peta) -->
+        <div class="bg-card border shadow-sm rounded-3xl p-4 overflow-hidden space-y-4">
+          <div class="flex items-center justify-between border-b pb-2.5">
+            <h4 class="font-bold text-sm text-foreground">Peta Lokasi Desa</h4>
+            <div class="flex gap-1.5">
+              <button id="btn-road" class="px-2.5 py-1 rounded bg-primary text-primary-foreground font-semibold text-[10px] transition-colors cursor-pointer">Jalan</button>
+              <button id="btn-sat" class="px-2.5 py-1 rounded bg-secondary text-secondary-foreground font-semibold text-[10px] transition-colors hover:bg-secondary/80 cursor-pointer">Satelit</button>
+            </div>
+          </div>
+          <div id="map" class="w-full aspect-video rounded-2xl border z-10 relative bg-muted"></div>
+        </div>
+
+      </div>
+
+      <!-- Formulir Pengaduan (Kanan) -->
+      <div class="lg:col-span-7 bg-card border shadow-lg rounded-3xl p-8 md:p-10 relative overflow-hidden animate-fade-in">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+        
+        <div class="relative z-10">
+          <h3 class="text-2xl font-bold text-foreground mb-2">Formulir Suara Warga</h3>
+          <p class="text-muted-foreground text-sm mb-8 leading-relaxed">Data Anda akan dijaga kerahasiaannya oleh pemerintah desa. Mohon sampaikan keluhan atau masukan secara tertib.</p>
+
+          <form id="pengaduan-form" class="space-y-6" novalidate>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="space-y-1.5 text-left">
+                <label for="nama" class="text-xs font-bold text-foreground uppercase tracking-wider">Nama Lengkap</label>
+                <input 
+                  type="text" 
+                  id="nama" 
+                  class="flex h-12 w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" 
+                  placeholder="Masukkan nama lengkap Anda" 
+                  required 
+                />
+                <p id="nama-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                  <span>Nama lengkap wajib diisi (minimal 3 huruf).</span>
+                </p>
+              </div>
+
+              <div class="space-y-1.5 text-left">
+                <div class="flex justify-between items-center">
+                  <label for="nik" class="text-xs font-bold text-foreground uppercase tracking-wider">NIK (16 Digit)</label>
+                  <span id="nik-counter" class="text-[10px] font-mono text-muted-foreground">0/16 digit</span>
+                </div>
+                <input 
+                  type="text" 
+                  id="nik" 
+                  inputmode="numeric"
+                  maxlength="16"
+                  class="flex h-12 w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm font-mono shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" 
+                  placeholder="Masukkan 16 digit NIK Anda" 
+                  required 
+                />
+                <p id="nik-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                  <span id="nik-error-text">Nomor NIK harus 16 digit angka.</span>
+                </p>
+              </div>
+            </div>
+
+            <div class="space-y-1.5 text-left">
+              <label for="kategori" class="text-xs font-bold text-foreground uppercase tracking-wider">Kategori Pengaduan</label>
+              <select 
+                id="kategori" 
+                class="flex h-12 w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+                required
+              >
+                <option value="">-- Pilih Kategori Pengaduan --</option>
+                <option value="Jalan & Infrastruktur">Jalan & Infrastruktur</option>
+                <option value="Pelayanan Publik Desa">Pelayanan Publik Desa</option>
+                <option value="Bantuan Sosial (Bansos)">Bantuan Sosial (Bansos)</option>
+                <option value="Kebersihan & Lingkungan">Kebersihan & Lingkungan</option>
+                <option value="Lainnya">Lain-lain</option>
+              </select>
+              <p id="kategori-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                <span>Silakan pilih salah satu kategori pengaduan.</span>
+              </p>
+            </div>
+
+            <div class="space-y-1.5 text-left">
+              <label for="pesan" class="text-xs font-bold text-foreground uppercase tracking-wider">Isi Keluhan / Aspirasi</label>
+              <textarea 
+                id="pesan" 
+                rows="4" 
+                class="flex w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary resize-y" 
+                placeholder="Ceritakan detail keluhan, lokasi kejadian, atau saran Anda..." 
+                required
+              ></textarea>
+              <p id="pesan-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                <span>Isi pengaduan terlalu pendek (minimal 10 karakter).</span>
+              </p>
+            </div>
+
+            <button 
+              type="submit" 
+              id="submit-pengaduan-btn"
+              class="w-full inline-flex items-center justify-center rounded-xl text-sm font-bold transition-all bg-primary text-primary-foreground hover:bg-primary/90 h-12 px-4 py-2 gap-2 shadow-md hover:shadow-lg cursor-pointer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+              Kirim Pengaduan Sekarang
+            </button>
+          </form>
+        </div>
+      </div>
+      
+    </div>
+
+    <!-- Custom Notification Popup Modal for Suara Warga -->
+    <div id="kontak-modal" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+      <div class="w-full max-w-md bg-card border rounded-3xl shadow-2xl p-6 sm:p-8 text-center space-y-5 animate-scale-in">
+        <div id="kontak-modal-icon" class="w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-500/20 shadow-inner">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+
+        <div class="space-y-2">
+          <h3 id="kontak-modal-title" class="text-xl font-extrabold text-foreground">Aspirasi Berhasil Dikirim!</h3>
+          <p id="kontak-modal-desc" class="text-sm text-muted-foreground leading-relaxed">
+            Terima kasih, aspirasi dan pengaduan Anda telah kami terima dan akan segera ditindaklanjuti oleh aparat Pemerintah Desa Puspamukti.
+          </p>
+        </div>
+
+        <button id="kontak-modal-btn" class="w-full inline-flex items-center justify-center rounded-xl text-sm font-bold bg-primary text-primary-foreground hover:bg-primary/90 h-12 shadow-md cursor-pointer transition-all">
+          Tutup & Mengerti
+        </button>
+      </div>
+    </div>
+
+  </div>
+</Layout>
+
+<!-- JS Leaflet CDN -->
+<script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<script is:inline define:vars={{ lokasiList, dbGeojson }}>
+  // Koordinat pusat Puspamukti
+  const centerCoords = [-7.355, 108.016];
+
+  // Inisialisasi Peta Leaflet
+  const map = L.map('map').setView(centerCoords, 14);
+
+  // Layer 1: Google Maps Roadmap
+  const googleRoadmap = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    attribution: '&copy; Google Maps'
+  }).addTo(map);
+
+  // Layer 2: Google Maps Satellite
+  const googleSatellite = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    attribution: '&copy; Google Maps Satelit'
+  });
+
+  // Load boundary from Supabase GeoJSON if available
+  if (dbGeojson) {
+    try {
+      const boundaryLayer = L.geoJSON(dbGeojson, {
+        style: {
+          color: '#dc2626',
+          fillColor: '#ef4444',
+          fillOpacity: 0.1,
+          weight: 2.5,
+          dashArray: '5, 7'
+        }
+      }).addTo(map);
+      
+      // Auto fit map bounds to the boundary
+      map.fitBounds(boundaryLayer.getBounds());
+    } catch (err) {
+      console.error("Error drawing GeoJSON boundary:", err);
+    }
+  }
+
+  // Fix default Leaflet icon paths
+  delete L.Icon.Default.prototype._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+  });
+
+  // Draw markers
+  lokasiList.forEach(loc => {
+    const latNum = parseFloat(loc.lat);
+    const lngNum = parseFloat(loc.lng);
+    
+    if (!isNaN(latNum) && !isNaN(lngNum)) {
+      const marker = L.marker([latNum, lngNum]).addTo(map);
+      marker.bindPopup(`<b>${loc.nama}</b><br><span class="text-[10px] text-muted-foreground">${loc.tipe}</span>`);
+      
+      if (loc.tipe === 'Kantor Desa') {
+        marker.openPopup();
+      }
+    }
+  });
+
+  // Switch Layer Buttons
+  document.getElementById('btn-road').addEventListener('click', (e) => {
+    map.removeLayer(googleSatellite);
+    googleRoadmap.addTo(map);
+    e.target.className = "px-2.5 py-1 rounded bg-primary text-primary-foreground font-semibold text-[10px] transition-colors cursor-pointer";
+    document.getElementById('btn-sat').className = "px-2.5 py-1 rounded bg-secondary text-secondary-foreground font-semibold text-[10px] transition-colors hover:bg-secondary/80 cursor-pointer";
+  });
+
+  document.getElementById('btn-sat').addEventListener('click', (e) => {
+    map.removeLayer(googleRoadmap);
+    googleSatellite.addTo(map);
+    e.target.className = "px-2.5 py-1 rounded bg-primary text-primary-foreground font-semibold text-[10px] transition-colors cursor-pointer";
+    document.getElementById('btn-road').className = "px-2.5 py-1 rounded bg-secondary text-secondary-foreground font-semibold text-[10px] transition-colors hover:bg-secondary/80 cursor-pointer";
+  });
+</script>
+
+<script>
+  const form = document.getElementById('pengaduan-form') as HTMLFormElement;
+  const submitBtn = document.getElementById('submit-pengaduan-btn') as HTMLButtonElement;
+
+  const getTodayString = () => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    const d = new Date();
+    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+  };
+
+  // Elements for Validation
+  const inputNama = document.getElementById('nama') as HTMLInputElement;
+  const inputNik = document.getElementById('nik') as HTMLInputElement;
+  const selectKategori = document.getElementById('kategori') as HTMLSelectElement;
+  const textareaPesan = document.getElementById('pesan') as HTMLTextAreaElement;
+
+  const namaError = document.getElementById('nama-error');
+  const nikError = document.getElementById('nik-error');
+  const nikCounter = document.getElementById('nik-counter');
+  const kategoriError = document.getElementById('kategori-error');
+  const pesanError = document.getElementById('pesan-error');
+
+  // Custom Modal Elements
+  const kontakModal = document.getElementById('kontak-modal');
+  const kontakModalTitle = document.getElementById('kontak-modal-title');
+  const kontakModalDesc = document.getElementById('kontak-modal-desc');
+  const kontakModalIcon = document.getElementById('kontak-modal-icon');
+  const kontakModalBtn = document.getElementById('kontak-modal-btn');
+
+  function showKontakModal(title: string, desc: string, isSuccess: boolean = true) {
+    if (kontakModalTitle) kontakModalTitle.textContent = title;
+    if (kontakModalDesc) kontakModalDesc.textContent = desc;
+    if (kontakModalIcon) {
+      if (isSuccess) {
+        kontakModalIcon.className = 'w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-500/20 shadow-inner';
+        kontakModalIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`;
+      } else {
+        kontakModalIcon.className = 'w-16 h-16 rounded-2xl bg-destructive/10 text-destructive flex items-center justify-center mx-auto border border-destructive/20 shadow-inner';
+        kontakModalIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>`;
+      }
+    }
+    if (kontakModal) {
+      kontakModal.classList.remove('hidden');
+      kontakModal.classList.add('flex');
+    }
+  }
+
+  function hideKontakModal() {
+    if (kontakModal) {
+      kontakModal.classList.add('hidden');
+      kontakModal.classList.remove('flex');
+    }
+  }
+
+  kontakModalBtn?.addEventListener('click', hideKontakModal);
+  kontakModal?.addEventListener('click', (e) => {
+    if (e.target === kontakModal) hideKontakModal();
+  });
+
+  // Validation Functions
+  function validateNama(): boolean {
+    const val = inputNama?.value.trim() || '';
+    if (val.length < 3) {
+      inputNama?.classList.add('border-destructive', 'focus-visible:ring-destructive');
+      inputNama?.classList.remove('border-input', 'focus-visible:ring-primary');
+      namaError?.classList.remove('hidden');
+      return false;
+    } else {
+      inputNama?.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+      inputNama?.classList.add('border-input', 'focus-visible:ring-primary');
+      namaError?.classList.add('hidden');
+      return true;
+    }
+  }
+
+  function validateNik(): boolean {
+    const raw = inputNik.value.replace(/[^0-9]/g, '');
+    inputNik.value = raw;
+    if (nikCounter) nikCounter.textContent = `${raw.length}/16 digit`;
+
+    if (raw.length !== 16) {
+      inputNik?.classList.add('border-destructive', 'focus-visible:ring-destructive');
+      inputNik?.classList.remove('border-input', 'focus-visible:ring-primary');
+      nikError?.classList.remove('hidden');
+      return false;
+    } else {
+      inputNik?.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+      inputNik?.classList.add('border-input', 'focus-visible:ring-primary');
+      nikError?.classList.add('hidden');
+      return true;
+    }
+  }
+
+  function validateKategori(): boolean {
+    if (!selectKategori.value) {
+      selectKategori?.classList.add('border-destructive', 'focus-visible:ring-destructive');
+      selectKategori?.classList.remove('border-input', 'focus-visible:ring-primary');
+      kategoriError?.classList.remove('hidden');
+      return false;
+    } else {
+      selectKategori?.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+      selectKategori?.classList.add('border-input', 'focus-visible:ring-primary');
+      kategoriError?.classList.add('hidden');
+      return true;
+    }
+  }
+
+  function validatePesan(): boolean {
+    const val = textareaPesan?.value.trim() || '';
+    if (val.length < 10) {
+      textareaPesan?.classList.add('border-destructive', 'focus-visible:ring-destructive');
+      textareaPesan?.classList.remove('border-input', 'focus-visible:ring-primary');
+      pesanError?.classList.remove('hidden');
+      return false;
+    } else {
+      textareaPesan?.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+      textareaPesan?.classList.add('border-input', 'focus-visible:ring-primary');
+      pesanError?.classList.add('hidden');
+      return true;
+    }
+  }
+
+  inputNama?.addEventListener('input', () => { if (!namaError?.classList.contains('hidden')) validateNama(); });
+  inputNik?.addEventListener('input', validateNik);
+  selectKategori?.addEventListener('change', () => { if (!kategoriError?.classList.contains('hidden')) validateKategori(); });
+  textareaPesan?.addEventListener('input', () => { if (!pesanError?.classList.contains('hidden')) validatePesan(); });
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const isNamaValid = validateNama();
+      const isNikValid = validateNik();
+      const isKategoriValid = validateKategori();
+      const isPesanValid = validatePesan();
+
+      if (!isNamaValid || !isNikValid || !isKategoriValid || !isPesanValid) {
+        return;
+      }
+
+      if (submitBtn) {
+        submitBtn.innerText = "Mengirim Aspirasi...";
+        submitBtn.setAttribute('disabled', 'true');
+      }
+
+      const payload = {
+        pengirim: inputNama.value.trim(),
+        nik: inputNik.value.trim(),
+        kategori: selectKategori.value,
+        isi: textareaPesan.value.trim(),
+        tanggal: getTodayString(),
+        status: 'Belum Diproses'
+      };
+
+      const { supabase } = await import('../lib/supabase');
+      const { error } = await supabase
+        .from('pengaduan')
+        .insert([payload]);
+
+      if (error) {
+        showKontakModal(
+          'Gagal Mengirim Pengaduan', 
+          'Terjadi kendala jaringan saat mengirim aspirasi: ' + error.message,
+          false
+        );
+      } else {
+        showKontakModal(
+          'Aspirasi Berhasil Dikirim!', 
+          'Terima kasih, suara dan aspirasi Anda telah tersimpan di sistem Pemerintah Desa Puspamukti dan akan segera ditindaklanjuti oleh aparat desa.',
+          true
+        );
+        form.reset();
+        if (nikCounter) nikCounter.textContent = '0/16 digit';
+      }
+
+      if (submitBtn) {
+        submitBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg> Kirim Pengaduan Sekarang`;
+        submitBtn.removeAttribute('disabled');
+      }
+    });
+  }
+</script>

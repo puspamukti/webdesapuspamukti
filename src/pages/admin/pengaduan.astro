@@ -1,0 +1,344 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Fetch contact settings from Supabase (runs at build time as initial fallback)
+const { data: dbKontak } = await supabase
+  .from('pengaturan_kontak')
+  .select('*')
+  .eq('id', 1)
+  .single();
+
+const kontak = dbKontak || {
+  alamat: "Jl. Raya Desa Puspamukti No. 1, Kec. Cigalontang, Kab. Tasikmalaya, Jawa Barat 46463",
+  email: "puspamuktidesa@gmail.com",
+  telepon: "0812-3456-7890",
+  gmaps_link: "https://maps.google.com/?q=Desa+Puspamukti+Cigalontang"
+};
+---
+
+<AdminLayout title="Kotak Pengaduan & Pengaturan Kontak">
+  <div class="space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight text-foreground">Kontak & Pengaduan</h1>
+        <p class="text-muted-foreground mt-1">Pantau aspirasi warga dan perbarui informasi kontak resmi Balai Desa Puspamukti.</p>
+      </div>
+    </div>
+
+    <!-- Main Layout Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Left Column: Complaints Table List (Client-side Rendered) -->
+      <div class="lg:col-span-2 space-y-6">
+        <div class="bg-card border rounded-3xl shadow-sm overflow-hidden">
+          <div class="px-6 py-5 border-b bg-muted/20 flex justify-between items-center">
+            <h3 class="font-bold text-lg text-foreground font-sans">Suara & Pengaduan Warga</h3>
+            <span id="total-count" class="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold">
+              0 Total Masuk
+            </span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="bg-muted/50 text-muted-foreground font-semibold border-b">
+                <tr>
+                  <th class="px-6 py-4">Pengirim / NIK</th>
+                  <th class="px-6 py-4">Kategori & Tanggal</th>
+                  <th class="px-6 py-4">Isi Pengaduan</th>
+                  <th class="px-6 py-4">Status</th>
+                  <th class="px-6 py-4 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y" id="pengaduan-table-body">
+                <tr>
+                  <td colspan="5" class="px-6 py-8 text-center text-muted-foreground">
+                    Memuat data pengaduan warga dari database...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Edit Contact Settings Form -->
+      <div class="space-y-6">
+        <form id="contact-form" class="bg-card border rounded-3xl p-6 shadow-sm space-y-6">
+          <div class="flex justify-between items-center border-b pb-4">
+            <h3 class="font-bold text-lg text-foreground font-sans">Pengaturan Kontak</h3>
+            <button 
+              type="submit" 
+              id="save-contact-btn"
+              class="inline-flex items-center justify-center rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 shadow-sm cursor-pointer"
+            >
+              Simpan Perubahan
+            </button>
+          </div>
+
+          <div class="space-y-4">
+            <!-- Alamat -->
+            <div class="space-y-1.5">
+              <label for="contact-address" class="text-xs font-bold text-foreground uppercase">Alamat Kantor Desa</label>
+              <textarea 
+                id="contact-address" 
+                rows="3" 
+                placeholder="Masukkan alamat lengkap..."
+                class="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary resize-none"
+                required
+              >{kontak.alamat}</textarea>
+            </div>
+
+            <!-- Email -->
+            <div class="space-y-1.5">
+              <label for="contact-email" class="text-xs font-bold text-foreground uppercase">Email Resmi Desa</label>
+              <input 
+                type="email" 
+                id="contact-email" 
+                value={kontak.email} 
+                placeholder="Contoh: pemdes@puspamukti.id"
+                class="flex h-11 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                required
+              />
+            </div>
+
+            <!-- WhatsApp -->
+            <div class="space-y-1.5">
+              <label for="contact-phone" class="text-xs font-bold text-foreground uppercase">Nomor WhatsApp Pelayanan</label>
+              <input 
+                type="text" 
+                id="contact-phone" 
+                value={kontak.telepon} 
+                placeholder="Contoh: 0812-XXXX-XXXX"
+                class="flex h-11 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                required
+              />
+            </div>
+
+            <!-- Google Map Embed Code -->
+            <div class="space-y-1.5">
+              <label for="contact-gmaps" class="text-xs font-bold text-foreground uppercase">Google Map Link Lokasi</label>
+              <input 
+                type="text" 
+                id="contact-gmaps" 
+                value={kontak.gmaps_link} 
+                placeholder="Tempel link Google Maps..."
+                class="flex h-11 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+              />
+            </div>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { supabase } from '../../lib/supabase';
+
+  const tableBody = document.getElementById('pengaduan-table-body');
+  const totalCountSpan = document.getElementById('total-count');
+
+  // --- 1. LOAD COMPLAINTS DYNAMICALLY (CLIENT-SIDE) ---
+  const loadComplaints = async () => {
+    if (!tableBody) return;
+
+    const { data: list, error } = await supabase
+      .from('pengaduan')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="5" class="px-6 py-8 text-center text-destructive font-semibold">
+            Gagal mengambil data pengaduan: ${error.message}
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    if (totalCountSpan) {
+      totalCountSpan.innerText = `${list.length} Total Masuk`;
+    }
+
+    if (list.length === 0) {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="5" class="px-6 py-8 text-center text-muted-foreground">
+            Belum ada suara warga atau pengaduan masuk saat ini.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tableBody.innerHTML = '';
+    list.forEach(item => {
+      const row = document.createElement('tr');
+      row.className = 'hover:bg-muted/30 transition-colors border-b';
+
+      const statusBadgeClass = 
+        item.status === 'Selesai' ? 'bg-green-500/10 text-green-600' :
+        item.status === 'Sedang Diproses' ? 'bg-blue-500/10 text-blue-600' :
+        'bg-amber-500/10 text-amber-600';
+
+      let actionButtons = '';
+      if (item.status === 'Belum Diproses') {
+        actionButtons += `<button class="proses-btn text-primary hover:underline text-xs font-bold mr-3 cursor-pointer" data-id="${item.id}">Proses</button>`;
+      } else if (item.status === 'Sedang Diproses') {
+        actionButtons += `<button class="selesai-btn text-green-600 hover:underline text-xs font-bold mr-3 cursor-pointer" data-id="${item.id}">Selesai</button>`;
+      }
+      actionButtons += `<button class="delete-btn text-destructive hover:underline text-xs font-bold cursor-pointer" data-id="${item.id}">Hapus</button>`;
+
+      row.innerHTML = `
+        <td class="px-6 py-4 font-bold text-foreground">
+          <div>
+            <span>${escapeHTML(item.pengirim)}</span>
+            <p class="text-[10px] text-muted-foreground font-mono mt-0.5">${escapeHTML(item.nik)}</p>
+          </div>
+        </td>
+        <td class="px-6 py-4">
+          <div class="space-y-1">
+            <span class="inline-flex items-center rounded-md border px-2 py-0.5 text-[9px] font-bold bg-secondary text-secondary-foreground uppercase">
+              ${escapeHTML(item.kategori)}
+            </span>
+            <p class="text-[10px] text-muted-foreground">${escapeHTML(item.tanggal)}</p>
+          </div>
+        </td>
+        <td class="px-6 py-4 text-muted-foreground text-xs leading-relaxed max-w-xs truncate" title="${escapeHTML(item.isi)}">
+          ${escapeHTML(item.isi)}
+        </td>
+        <td class="px-6 py-4">
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusBadgeClass}">
+            ${item.status}
+          </span>
+        </td>
+        <td class="px-6 py-4 text-right whitespace-nowrap">
+          ${actionButtons}
+        </td>
+      `;
+
+      tableBody.appendChild(row);
+    });
+
+    bindActionButtons();
+  };
+
+  const escapeHTML = (str: string) => {
+    if (!str) return '';
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  };
+
+  // Bind actions via delegation or rebinding
+  const bindActionButtons = () => {
+    // Process Button
+    document.querySelectorAll('.proses-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const el = e.currentTarget as HTMLButtonElement;
+        const id = el.getAttribute('data-id');
+        if (!id) return;
+
+        if (confirm("Mulai memproses keluhan/masukan warga ini?")) {
+          const { error } = await supabase
+            .from('pengaduan')
+            .update({ status: 'Sedang Diproses' })
+            .eq('id', parseInt(id));
+
+          if (error) alert("Gagal mengupdate status: " + error.message);
+          else { loadComplaints(); }
+        }
+      });
+    });
+
+    // Complete Button
+    document.querySelectorAll('.selesai-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const el = e.currentTarget as HTMLButtonElement;
+        const id = el.getAttribute('data-id');
+        if (!id) return;
+
+        if (confirm("Tandai pengaduan warga ini sebagai 'Selesai'?")) {
+          const { error } = await supabase
+            .from('pengaduan')
+            .update({ status: 'Selesai' })
+            .eq('id', parseInt(id));
+
+          if (error) alert("Gagal menyelesaikan pengaduan: " + error.message);
+          else { loadComplaints(); }
+        }
+      });
+    });
+
+    // Delete Button
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const el = e.currentTarget as HTMLButtonElement;
+        const id = el.getAttribute('data-id');
+        if (!id) return;
+
+        if (confirm("Apakah Anda yakin ingin menghapus data pengaduan warga ini?")) {
+          const { error } = await supabase
+            .from('pengaduan')
+            .delete()
+            .eq('id', parseInt(id));
+
+          if (error) alert("Gagal menghapus pengaduan: " + error.message);
+          else { loadComplaints(); }
+        }
+      });
+    });
+  };
+
+  // --- 2. UPDATE CONTACT SETTINGS ---
+  const contactForm = document.getElementById('contact-form');
+  const saveBtn = document.getElementById('save-contact-btn');
+  const inputAddress = document.getElementById('contact-address') as HTMLTextAreaElement;
+  const inputEmail = document.getElementById('contact-email') as HTMLInputElement;
+  const inputPhone = document.getElementById('contact-phone') as HTMLInputElement;
+  const inputGmaps = document.getElementById('contact-gmaps') as HTMLInputElement;
+
+  if (contactForm) {
+    contactForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      if (saveBtn) {
+        saveBtn.innerText = "Menyimpan...";
+        saveBtn.setAttribute('disabled', 'true');
+      }
+
+      const payload = {
+        id: 1,
+        alamat: inputAddress.value,
+        email: inputEmail.value,
+        telepon: inputPhone.value,
+        gmaps_link: inputGmaps.value || null,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('pengaturan_kontak')
+        .upsert(payload);
+
+      if (error) {
+        alert("Gagal menyimpan kontak: " + error.message);
+      } else {
+        alert("Pengaturan kontak resmi desa berhasil diperbarui!");
+      }
+
+      if (saveBtn) {
+        saveBtn.innerText = "Simpan Perubahan";
+        saveBtn.removeAttribute('disabled');
+      }
+    });
+  }
+
+  // Load complaints list on page mount
+  loadComplaints();
+</script>

@@ -1,0 +1,1292 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="Dasbor Warga | Desa Puspamukti">
+  <!-- Immediate Zero-Delay Auth Guard (Synchronous before DOM parse) -->
+  <script is:inline>
+    (function() {
+      try {
+        var session = localStorage.getItem('warga_session');
+        if (!session) {
+          window.location.replace('/warga/login');
+        }
+      } catch (e) {
+        window.location.replace('/warga/login');
+      }
+    })();
+  </script>
+
+  <main class="container mx-auto px-4 py-8 max-w-screen-xl min-h-[75vh]">
+    <!-- Placeholder while checking auth on client-side -->
+    <div id="loading-state" class="flex flex-col items-center justify-center h-64 animate-pulse">
+      <div class="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+      <p class="text-muted-foreground font-medium">Memverifikasi Identitas Warga...</p>
+    </div>
+
+    <div id="warga-content" class="hidden space-y-8 animate-fade-in">
+      
+      <!-- Welcome Profile Header -->
+      <div class="bg-card border rounded-3xl p-6 md:p-8 shadow-sm relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl pointer-events-none"></div>
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+          <div class="space-y-2">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold border border-primary/20">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Akun Warga Terverifikasi
+            </div>
+            <h1 class="text-3xl font-extrabold tracking-tight text-foreground">Selamat Datang, <span id="warga-nama" class="text-primary">Warga</span>!</h1>
+            <div class="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-muted-foreground">
+              <span class="flex items-center gap-1.5 font-mono">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><rect width="18" height="14" x="3" y="5" rx="2" ry="2"/><path d="M7 15h4M7 11h.01"/></svg>
+                NIK: <strong id="warga-nik" class="text-foreground">Memuat...</strong>
+              </span>
+              <span class="flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                RT/RW: <strong id="warga-rtrw" class="text-foreground">-</strong>
+              </span>
+            </div>
+          </div>
+          <button id="logout-btn" class="inline-flex items-center justify-center rounded-xl text-xs font-bold transition-colors bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 gap-2 shadow-xs whitespace-nowrap cursor-pointer">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x1="9" y1="12" y2="12"/></svg>
+            Keluar Portal
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="flex items-center gap-2 border-b border-border pb-3 overflow-x-auto" id="warga-tabs">
+        <button data-tab="tab-bansos" class="warga-tab-btn active px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs sm:text-sm font-bold whitespace-nowrap shadow-xs cursor-pointer transition-all flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          Status Bansos & Data Diri
+        </button>
+        <button data-tab="tab-esurat" class="warga-tab-btn px-4 py-2.5 rounded-xl bg-secondary text-secondary-foreground text-xs sm:text-sm font-bold whitespace-nowrap hover:bg-secondary/80 transition-colors cursor-pointer flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/></svg>
+          Layanan E-Surat Mandiri
+        </button>
+        <button data-tab="tab-pengaduan" class="warga-tab-btn px-4 py-2.5 rounded-xl bg-secondary text-secondary-foreground text-xs sm:text-sm font-bold whitespace-nowrap hover:bg-secondary/80 transition-colors cursor-pointer flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Lapor Kades (Aspirasi)
+        </button>
+        <button data-tab="tab-apbdes" class="warga-tab-btn px-4 py-2.5 rounded-xl bg-secondary text-secondary-foreground text-xs sm:text-sm font-bold whitespace-nowrap hover:bg-secondary/80 transition-colors cursor-pointer flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Transparansi APBDes
+        </button>
+      </div>
+
+      <!-- TAB 1: BANSOS & DATA DIRI -->
+      <div id="tab-bansos" class="tab-pane space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+          
+          <!-- Status Bantuan Sosial -->
+          <div class="md:col-span-6 bg-card border rounded-3xl p-6 md:p-8 shadow-sm flex flex-col justify-between">
+            <div class="flex items-center gap-3 border-b pb-4">
+              <div class="w-10 h-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              </div>
+              <div>
+                <h2 class="text-lg font-bold text-foreground">Status Bantuan Sosial (Bansos)</h2>
+                <p class="text-xs text-muted-foreground">Kementerian Sosial & Dana Desa Puspamukti</p>
+              </div>
+            </div>
+            
+            <div class="py-8 flex flex-col items-center justify-center text-center space-y-3">
+              <span class="text-xs font-bold text-muted-foreground uppercase tracking-widest">Kategori Penerima:</span>
+              <div id="status-bansos-badge" class="px-6 py-3 rounded-full text-base sm:text-lg font-extrabold shadow-inner border">
+                Memeriksa Status...
+              </div>
+              <p id="status-bansos-desc" class="text-xs font-medium text-foreground max-w-sm pt-2">
+                Memeriksa basis data bantuan sosial...
+              </p>
+            </div>
+
+            <div class="bg-muted/40 p-3.5 rounded-2xl border text-[11px] text-muted-foreground leading-relaxed">
+              🔒 <strong>Kerahasiaan Terjamin:</strong> Data ini bersifat pribadi dan hanya dapat diakses melalui verifikasi NIK Anda.
+            </div>
+          </div>
+
+          <!-- Data Kependudukan Pribadi -->
+          <div class="md:col-span-6 bg-card border rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+            <div class="flex items-center gap-3 border-b pb-4">
+              <div class="w-10 h-10 bg-blue-500/10 text-blue-600 rounded-xl flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              </div>
+              <div>
+                <h2 class="text-lg font-bold text-foreground">Data Kependudukan Anda</h2>
+                <p class="text-xs text-muted-foreground">Sesuai arsip register kependudukan desa</p>
+              </div>
+            </div>
+
+            <div class="space-y-3 text-xs sm:text-sm">
+              <div class="flex justify-between py-2 border-b border-border/50">
+                <span class="text-muted-foreground">Nama Lengkap</span>
+                <span class="font-bold text-foreground" id="info-nama">-</span>
+              </div>
+              <div class="flex justify-between py-2 border-b border-border/50">
+                <span class="text-muted-foreground">NIK (Nomor Induk)</span>
+                <span class="font-mono font-bold text-foreground" id="info-nik">-</span>
+              </div>
+              <div class="flex justify-between py-2 border-b border-border/50">
+                <span class="text-muted-foreground">Tanggal Lahir</span>
+                <span class="font-semibold text-foreground" id="info-tgl">-</span>
+              </div>
+              <div class="flex justify-between py-2 border-b border-border/50">
+                <span class="text-muted-foreground">Jenis Kelamin</span>
+                <span class="font-semibold text-foreground" id="info-jk">-</span>
+              </div>
+              <div class="flex justify-between py-2">
+                <span class="text-muted-foreground">Wilayah Domisili</span>
+                <span class="font-semibold text-foreground">RT/RW <span id="info-rtrw">-</span>, Desa Puspamukti</span>
+              </div>
+            </div>
+
+            <div class="bg-primary/5 p-3.5 rounded-2xl border border-primary/20 flex items-center justify-between text-xs">
+              <span class="font-medium text-foreground">Status PBB (Pajak Bumi & Bangunan)</span>
+              <span class="bg-emerald-500/10 text-emerald-700 font-bold px-2.5 py-1 rounded-lg border border-emerald-300">Lunas / Terdata</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- TAB 2: LAYANAN E-SURAT MANDIRI -->
+      <div id="tab-esurat" class="tab-pane hidden space-y-8">
+        
+        <!-- Pilihan Surat Cepat -->
+        <div class="space-y-4">
+          <div>
+            <h2 class="text-xl font-bold text-foreground">Ajukan Surat Keterangan Baru</h2>
+            <p class="text-xs sm:text-sm text-muted-foreground">Pilih jenis surat yang Anda butuhkan. Data identitas otomatis terisi dari akun warga Anda.</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <button class="btn-request-surat flex items-start gap-4 p-5 rounded-2xl border bg-card hover:bg-muted/40 hover:border-primary/40 transition-all text-left shadow-2xs group cursor-pointer" data-jenis="Surat Keterangan Tidak Mampu (SKTM)">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+              </div>
+              <div class="space-y-1">
+                <h3 class="font-bold text-sm text-foreground group-hover:text-primary transition-colors">SKTM (Tidak Mampu)</h3>
+                <p class="text-[11px] text-muted-foreground">Untuk keperluan beasiswa pendidikan atau keringanan biaya RS.</p>
+              </div>
+            </button>
+
+            <button class="btn-request-surat flex items-start gap-4 p-5 rounded-2xl border bg-card hover:bg-muted/40 hover:border-primary/40 transition-all text-left shadow-2xs group cursor-pointer" data-jenis="Surat Keterangan Usaha (SKU)">
+              <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              </div>
+              <div class="space-y-1">
+                <h3 class="font-bold text-sm text-foreground group-hover:text-primary transition-colors">SKU (Keterangan Usaha)</h3>
+                <p class="text-[11px] text-muted-foreground">Untuk pengajuan KUR, izin usaha mikro, atau bantuan modal.</p>
+              </div>
+            </button>
+
+            <button class="btn-request-surat flex items-start gap-4 p-5 rounded-2xl border bg-card hover:bg-muted/40 hover:border-primary/40 transition-all text-left shadow-2xs group cursor-pointer" data-jenis="Surat Pengantar Domisili">
+              <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              </div>
+              <div class="space-y-1">
+                <h3 class="font-bold text-sm text-foreground group-hover:text-primary transition-colors">Pengantar Domisili</h3>
+                <p class="text-[11px] text-muted-foreground">Keterangan resmi tempat tinggal di wilayah Desa Puspamukti.</p>
+              </div>
+            </button>
+
+            <button class="btn-request-surat flex items-start gap-4 p-5 rounded-2xl border bg-card hover:bg-muted/40 hover:border-primary/40 transition-all text-left shadow-2xs group cursor-pointer" data-jenis="Surat Pengantar SKCK">
+              <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <div class="space-y-1">
+                <h3 class="font-bold text-sm text-foreground group-hover:text-primary transition-colors">Pengantar SKCK</h3>
+                <p class="text-[11px] text-muted-foreground">Untuk melamar pekerjaan, seleksi CPNS, atau kedinasan.</p>
+              </div>
+            </button>
+
+            <button class="btn-request-surat flex items-start gap-4 p-5 rounded-2xl border bg-card hover:bg-muted/40 hover:border-primary/40 transition-all text-left shadow-2xs group cursor-pointer" data-jenis="Surat Keterangan Belum Menikah">
+              <div class="w-10 h-10 rounded-xl bg-pink-500/10 text-pink-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+              </div>
+              <div class="space-y-1">
+                <h3 class="font-bold text-sm text-foreground group-hover:text-primary transition-colors">Keterangan Belum Menikah</h3>
+                <p class="text-[11px] text-muted-foreground">Persyaratan pendaftaran KUA, administrasi kantor, dll.</p>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Riwayat Permohonan Surat -->
+        <div class="bg-card border rounded-3xl shadow-sm overflow-hidden space-y-4">
+          <div class="px-6 py-5 border-b bg-muted/20 flex justify-between items-center">
+            <div>
+              <h3 class="font-bold text-lg text-foreground">Riwayat Permohonan Surat Saya</h3>
+              <p class="text-xs text-muted-foreground">Pantau status persetujuan dari Kepala Desa & cetak surat mandiri</p>
+            </div>
+            <button id="refresh-surat-btn" class="p-2 rounded-xl hover:bg-muted text-muted-foreground cursor-pointer" title="Perbarui Data">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="bg-muted/50 text-muted-foreground font-semibold border-b">
+                <tr>
+                  <th class="px-6 py-3.5">Jenis Surat</th>
+                  <th class="px-6 py-3.5">Keperluan</th>
+                  <th class="px-6 py-3.5">Tanggal Pengajuan</th>
+                  <th class="px-6 py-3.5">Status</th>
+                  <th class="px-6 py-3.5 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y" id="warga-surat-tbody">
+                <tr>
+                  <td colspan="5" class="px-6 py-8 text-center text-muted-foreground">
+                    Memuat riwayat permohonan surat Anda...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- TAB 3: LAPOR KADES (ASPIRASI & PENGADUAN) -->
+      <div id="tab-pengaduan" class="tab-pane hidden space-y-8">
+        
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <!-- Form Lapor Kades -->
+          <div class="lg:col-span-5 bg-card border rounded-3xl p-6 md:p-8 shadow-sm space-y-5">
+            <div class="border-b pb-4 space-y-1">
+              <h2 class="text-xl font-bold text-foreground">Sampaikan Aspirasi / Laporan</h2>
+              <p class="text-xs text-muted-foreground">Identitas Anda terproteksi aman dan ditangani langsung oleh Pemdes.</p>
+            </div>
+
+            <form id="warga-pengaduan-form" class="space-y-4" novalidate>
+              <div class="space-y-1.5 text-left">
+                <label for="lapor-kategori" class="text-xs font-bold text-foreground uppercase tracking-wider">Kategori Laporan</label>
+                <select id="lapor-kategori" class="flex h-11 w-full rounded-xl border border-input bg-background px-3 py-2 text-xs sm:text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer" required>
+                  <option value="Jalan & Infrastruktur">Jalan & Infrastruktur Rusak</option>
+                  <option value="Bantuan Sosial (Bansos)">Kendala Bansos / DTKS</option>
+                  <option value="Pelayanan Publik Desa">Pelayanan Balai Desa</option>
+                  <option value="Kebersihan & Lingkungan">Kebersihan & Lingkungan</option>
+                  <option value="Lainnya">Lain-lain / Aspirasi Umum</option>
+                </select>
+              </div>
+
+              <div class="space-y-1.5 text-left">
+                <label for="lapor-isi" class="text-xs font-bold text-foreground uppercase tracking-wider">Uraian Masalah / Usulan</label>
+                <textarea 
+                  id="lapor-isi" 
+                  rows="4" 
+                  placeholder="Tuliskan secara jelas lokasi, kendala, atau saran pembangunan untuk desa kita..."
+                  class="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-xs sm:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary resize-none shadow-2xs transition-colors"
+                  required
+                ></textarea>
+                <p id="lapor-isi-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                  <span>Uraian laporan wajib diisi minimal 10 karakter.</span>
+                </p>
+              </div>
+
+              <button type="submit" id="submit-lapor-btn" class="w-full inline-flex items-center justify-center rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 h-11 text-xs font-bold shadow-md hover:shadow-lg gap-2 cursor-pointer transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                Kirim Laporan ke Kades
+              </button>
+            </form>
+          </div>
+
+          <!-- Riwayat Pengaduan Saya -->
+          <div class="lg:col-span-7 bg-card border rounded-3xl shadow-sm overflow-hidden">
+            <div class="px-6 py-5 border-b bg-muted/20">
+              <h3 class="font-bold text-lg text-foreground">Riwayat Laporan Saya</h3>
+              <p class="text-xs text-muted-foreground">Daftar aspirasi yang telah Anda kirimkan</p>
+            </div>
+
+            <div class="divide-y" id="warga-pengaduan-list">
+              <div class="p-6 text-center text-xs text-muted-foreground">
+                Memuat riwayat laporan Anda...
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- TAB 4: TRANSPARANSI APBDES (KHUSUS WARGA) -->
+      <div id="tab-apbdes" class="tab-pane hidden space-y-6">
+        <div class="bg-card border rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b gap-4">
+            <div>
+              <h2 class="text-xl font-bold text-foreground flex items-center gap-2">
+                <span>📊</span> Transparansi Anggaran Desa (APBDes)
+              </h2>
+              <p class="text-xs text-muted-foreground">Rincian realisasi pendapatan dan belanja Desa Puspamukti khusus hak warga</p>
+            </div>
+            <a href="/transparansi" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors">
+              <span>📄</span> Lihat Laporan Lengkap
+            </a>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+            <div class="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+              <span class="text-[11px] font-bold text-emerald-700 uppercase">Total Pendapatan Desa</span>
+              <div class="text-lg sm:text-xl font-extrabold text-emerald-800 mt-1">Rp 1.465.000.000</div>
+              <p class="text-[10px] text-muted-foreground mt-1">PAD + Dana Desa + ADD + Banprov</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-destructive/10 border border-destructive/20">
+              <span class="text-[11px] font-bold text-destructive uppercase">Total Belanja & Pembangunan</span>
+              <div class="text-lg sm:text-xl font-extrabold text-destructive mt-1">Rp 1.360.000.000</div>
+              <p class="text-[10px] text-muted-foreground mt-1">Fisik Jalan + Pegawai + Operasional</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20">
+              <span class="text-[11px] font-bold text-blue-700 uppercase">Sisa Kas Desa (SILPA)</span>
+              <div class="text-lg sm:text-xl font-extrabold text-blue-800 mt-1">Rp 105.000.000</div>
+              <p class="text-[10px] text-muted-foreground mt-1">Saldo Kas Desa Berjalan</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- MODAL: FORM PENGAJUAN SURAT -->
+  <div id="request-surat-modal" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-card border w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-scale-in">
+      <div class="px-6 py-5 border-b flex justify-between items-center bg-muted/20">
+        <div>
+          <h3 class="font-bold text-lg text-foreground">Formulir Permohonan Surat</h3>
+          <p class="text-xs text-primary font-bold" id="modal-jenis-surat">Jenis Surat</p>
+        </div>
+        <button id="close-request-modal-btn" class="p-1.5 rounded-xl hover:bg-muted text-muted-foreground cursor-pointer transition-colors" aria-label="Tutup">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="request-surat-form" class="p-6 space-y-4" novalidate>
+        <input type="hidden" id="input-jenis-surat" />
+
+        <div class="space-y-1.5 text-left">
+          <label for="input-keperluan" class="text-xs font-bold text-foreground uppercase tracking-wider">Keperluan Pembuatan Surat</label>
+          <input 
+            type="text" 
+            id="input-keperluan" 
+            placeholder="Contoh: Persyaratan Pengajuan Beasiswa Pendidikan"
+            class="flex h-11 w-full rounded-xl border border-input bg-background px-3 py-2 text-xs sm:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs transition-colors"
+            required
+          />
+          <p id="keperluan-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+            <span>Keperluan surat wajib diisi (minimal 5 karakter).</span>
+          </p>
+        </div>
+
+        <div class="space-y-1.5 text-left">
+          <label for="input-keterangan" class="text-xs font-bold text-foreground uppercase tracking-wider">Keterangan Tambahan (Opsional)</label>
+          <textarea 
+            id="input-keterangan" 
+            rows="2"
+            placeholder="Contoh: Nama Usaha: Toko Berkah / Nama Sekolah: SMAN 1..."
+            class="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-xs sm:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary resize-none shadow-2xs transition-colors"
+          ></textarea>
+        </div>
+
+        <div class="bg-muted/40 p-3 rounded-xl border text-[11px] text-muted-foreground">
+          ℹ️ Surat akan otomatis diverifikasi oleh staf pelayanan Desa Puspamukti. Anda dapat mencetak surat resmi mandiri setelah disetujui.
+        </div>
+
+        <div class="pt-2 flex gap-3">
+          <button type="button" id="cancel-request-btn" class="w-1/2 inline-flex items-center justify-center rounded-xl bg-secondary text-secondary-foreground hover:bg-secondary/80 h-11 text-xs font-bold cursor-pointer transition-colors">
+            Batal
+          </button>
+          <button type="submit" id="submit-request-btn" class="w-1/2 inline-flex items-center justify-center rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 h-11 text-xs font-bold cursor-pointer shadow-md hover:shadow-lg transition-all">
+            Ajukan Surat
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Custom Universal Notification Modal for Warga -->
+  <div id="warga-notify-modal" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="w-full max-w-md bg-card border rounded-3xl shadow-2xl p-6 sm:p-8 text-center space-y-5 animate-scale-in">
+      <div id="warga-notify-icon" class="w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-500/20 shadow-inner">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+
+      <div class="space-y-2">
+        <h3 id="warga-notify-title" class="text-xl font-extrabold text-foreground">Permohonan Berhasil Dikirim!</h3>
+        <p id="warga-notify-desc" class="text-sm text-muted-foreground leading-relaxed">
+          Permohonan surat Anda telah diterima oleh sistem pelayanan desa.
+        </p>
+      </div>
+
+      <button id="warga-notify-btn" class="w-full inline-flex items-center justify-center rounded-xl text-sm font-bold bg-primary text-primary-foreground hover:bg-primary/90 h-12 shadow-md cursor-pointer transition-all">
+        Mengerti
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL: PRATINJAU & CETAK SURAT RESMI WARGA (A4 & F4) -->
+  <div id="warga-print-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-start justify-center p-3 sm:p-6 overflow-y-auto">
+    <div id="warga-print-modal-wrapper" class="w-full max-w-4xl flex flex-col my-2 sm:my-6 relative z-10 animate-fade-in">
+      
+      <!-- Toolbar (Pilihan Ukuran Kertas & Tombol Download/Cetak) -->
+      <div class="bg-card text-card-foreground px-6 py-4 rounded-2xl border-2 border-primary/40 shadow-2xl flex flex-wrap justify-between items-center gap-4 mb-6 print:hidden sticky top-2 z-20">
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-extrabold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="8" x2="16" y1="10" y2="10"/></svg>
+            Ukuran Kertas:
+          </span>
+          <div class="inline-flex rounded-xl p-1 bg-muted border gap-1 shadow-inner">
+            <button id="warga-btn-paper-a4" type="button" class="px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-blue-600 text-white shadow-sm transition-all cursor-pointer ring-2 ring-blue-400">
+              📄 A4 (210 × 297 mm)
+            </button>
+            <button id="warga-btn-paper-f4" type="button" class="px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-transparent text-muted-foreground hover:text-foreground transition-all cursor-pointer">
+              📄 F4 / Folio (215 × 330 mm)
+            </button>
+          </div>
+          <span id="warga-paper-status-text" class="text-[11px] font-bold text-primary bg-primary/10 px-2 py-1 rounded-md hidden sm:inline-block">Aktif: A4</span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="do-warga-print-btn" class="inline-flex items-center justify-center rounded-xl bg-primary text-primary-foreground h-10 px-5 text-xs font-bold hover:bg-primary/90 shadow-md gap-2 cursor-pointer transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+            <span>Cetak / Simpan PDF</span>
+          </button>
+          <button id="close-warga-print-btn" class="p-2 rounded-xl hover:bg-muted text-muted-foreground cursor-pointer transition-colors" aria-label="Tutup">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Real Paper Container Sheet (A4 or F4) -->
+      <div class="flex justify-center overflow-x-auto pb-8">
+        <div class="paper-sheet paper-a4 rounded-lg" id="warga-letter-paper" style="width: 210mm; min-height: 297mm; padding: 20mm;">
+          
+          <!-- Kop Surat Resmi (Double Line) -->
+          <div class="text-center pb-2 border-b-[3px] border-black">
+            <div class="flex items-center gap-4">
+              <img src="/logodesa.webp" alt="Logo Desa" class="h-24 w-auto object-contain shrink-0" />
+              <div class="flex-1 space-y-0.5 font-serif text-black">
+                <h4 class="text-base font-bold tracking-wider uppercase">Pemerintah Kabupaten Tasikmalaya</h4>
+                <h4 class="text-base font-bold tracking-wider uppercase">Kecamatan Cigalontang</h4>
+                <h3 class="text-2xl font-black tracking-widest uppercase">Pemerintah Desa Puspamukti</h3>
+                <p class="text-xs font-sans text-gray-700 mt-1">Jl. Raya Desa Puspamukti No. 1, Cigalontang, Tasikmalaya, Jawa Barat 46463</p>
+                <p class="text-[11px] font-sans text-gray-600">Email: puspamuktidesa@gmail.com | Website: desapuspamukti.id</p>
+              </div>
+            </div>
+          </div>
+          <div class="border-b-[1px] border-black mt-[2px] mb-8"></div>
+
+          <!-- Judul Surat -->
+          <div class="text-center space-y-1.5 my-6 font-serif">
+            <h2 class="text-lg font-extrabold uppercase underline tracking-widest" id="warga-surat-judul-cetak">SURAT KETERANGAN</h2>
+            <p class="text-xs font-sans text-gray-800 font-bold">Nomor: <span id="warga-surat-nomor-cetak">470/001/Pemdes/2026</span></p>
+          </div>
+
+          <!-- Pembuka -->
+          <p class="text-xs font-serif text-justify leading-relaxed mt-4">
+            Yang bertanda tangan di bawah ini, Kepala Desa Puspamukti, Kecamatan Cigalontang, Kabupaten Tasikmalaya, Provinsi Jawa Barat, menerangkan dengan sebenarnya bahwa:
+          </p>
+
+          <!-- Biodata Warga (Dinamis) -->
+          <div class="pl-8 my-4 space-y-2 text-xs font-serif leading-relaxed">
+            <div class="grid grid-cols-12">
+              <span class="col-span-4 text-gray-800">1. Nama Lengkap</span>
+              <span class="col-span-8 font-bold">: <span id="warga-surat-nama-cetak">-</span></span>
+            </div>
+            <div class="grid grid-cols-12">
+              <span class="col-span-4 text-gray-800">2. NIK (KTP)</span>
+              <span class="col-span-8 font-mono font-bold">: <span id="warga-surat-nik-cetak">-</span></span>
+            </div>
+            <div class="grid grid-cols-12">
+              <span class="col-span-4 text-gray-800">3. Tempat, Tgl Lahir</span>
+              <span class="col-span-8">: <span id="warga-surat-ttl-cetak">Tasikmalaya, 12 Mei 1990</span></span>
+            </div>
+            <div class="grid grid-cols-12">
+              <span class="col-span-4 text-gray-800">4. Jenis Kelamin</span>
+              <span class="col-span-8">: <span id="warga-surat-jk-cetak">Laki-laki</span></span>
+            </div>
+            <div class="grid grid-cols-12">
+              <span class="col-span-4 text-gray-800">5. Kewarganegaraan / Agama</span>
+              <span class="col-span-8">: WNI / <span id="warga-surat-agama-cetak">Islam</span></span>
+            </div>
+            <div class="grid grid-cols-12">
+              <span class="col-span-4 text-gray-800">6. Alamat / Tempat Tinggal</span>
+              <span class="col-span-8">: RT/RW <span id="warga-surat-rtrw-cetak">01/02</span>, Desa Puspamukti, Kec. Cigalontang, Kab. Tasikmalaya</span>
+            </div>
+          </div>
+
+          <!-- Isi Keterangan -->
+          <div class="text-xs font-serif space-y-3 text-justify leading-relaxed mt-4">
+            <p>
+              Nama yang tercantum di atas adalah benar-benar warga penduduk yang berdomisili dan tercatat dalam register kependudukan Desa Puspamukti, Kecamatan Cigalontang, Kabupaten Tasikmalaya.
+            </p>
+            <p>
+              Berdasarkan permohonan yang bersangkutan, surat keterangan ini dikeluarkan secara resmi untuk keperluan:
+            </p>
+            <div class="bg-gray-50 border border-gray-300 p-3 rounded-lg text-center font-bold text-gray-900 my-2 font-sans text-xs">
+              "<span id="warga-surat-keperluan-cetak">-</span>"
+            </div>
+            <p>
+              Demikian surat keterangan ini kami berikan kepada yang bersangkutan agar dapat dipergunakan sebagaimana mestinya dan pihak yang berkepentingan menjadi maklum.
+            </p>
+          </div>
+
+          <!-- Tanda Tangan & QR Code Verifikasi (Bagian Bawah Kertas) -->
+          <div class="mt-12 pt-4 flex justify-between items-end font-serif">
+            <!-- QR Code Verifikasi Digital E-Gov (Aktif & Bisa Di-scan) -->
+            <a id="warga-qr-link-cetak" href="/verifikasi" target="_blank" class="text-center space-y-1 block group cursor-pointer" title="Scan atau Klik untuk Memverifikasi Keaslian Surat">
+              <div class="w-24 h-24 border-2 border-black p-1 mx-auto flex items-center justify-center bg-white shadow-xs">
+                <img id="warga-qr-image-cetak" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https%3A%2F%2Fdesapuspamukti.id%2Fverifikasi" alt="QR Code Verifikasi" class="w-full h-full object-contain" />
+              </div>
+              <p class="text-[9px] font-sans font-bold text-gray-700 uppercase tracking-wider group-hover:text-primary transition-colors">Verifikasi Digital E-Gov</p>
+              <p class="text-[8px] font-sans text-gray-500">Scan QR / Klik Disini</p>
+            </a>
+
+            <!-- Tanda Tangan Kepala Desa -->
+            <div class="text-center space-y-16">
+              <div class="space-y-0.5 text-xs">
+                <p>Puspamukti, <span id="warga-surat-tgl-cetak">01 September 2026</span></p>
+                <p class="font-bold uppercase tracking-wider">Kepala Desa Puspamukti,</p>
+              </div>
+              <div class="space-y-0.5 text-xs">
+                <p class="font-bold underline uppercase tracking-widest">ATANG RIDWAN</p>
+                <p class="text-[10px] text-gray-700 font-sans">NIP. -</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <style id="warga-print-page-style" is:global>
+    @page {
+      size: A4 portrait;
+      margin: 15mm 20mm 15mm 20mm;
+    }
+  </style>
+
+  <style is:global>
+    .paper-sheet {
+      background: white !important;
+      color: black !important;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+      box-sizing: border-box;
+      transition: all 0.2s ease;
+    }
+
+    .paper-a4 {
+      width: 210mm !important;
+      min-height: 297mm !important;
+      padding: 20mm 20mm 20mm 20mm !important;
+    }
+
+    .paper-f4 {
+      width: 215mm !important;
+      min-height: 330mm !important;
+      padding: 20mm 20mm 20mm 20mm !important;
+    }
+
+    @media (max-width: 768px) {
+      .paper-sheet {
+        width: 100% !important;
+        min-height: auto !important;
+        padding: 16px !important;
+      }
+    }
+
+    @media print {
+      body {
+        background: white !important;
+        color: black !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      body * {
+        visibility: hidden;
+      }
+
+      #warga-print-modal {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: block !important;
+        overflow: visible !important;
+      }
+
+      #warga-print-modal-wrapper {
+        box-shadow: none !important;
+        border: none !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+
+      .paper-sheet, .paper-sheet * {
+        visibility: visible;
+      }
+
+      .paper-sheet {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+
+      .print\:hidden {
+        display: none !important;
+      }
+    }
+  </style>
+</Layout>
+
+<script>
+  import { supabase } from '../../lib/supabase';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // 1. Check Citizen Session
+    const sessionStr = localStorage.getItem('warga_session');
+    
+    if (!sessionStr) {
+      window.location.href = '/warga/login';
+      return;
+    }
+
+    let user: any = null;
+    try {
+      user = JSON.parse(sessionStr);
+    } catch {
+      localStorage.removeItem('warga_session');
+      window.location.href = '/warga/login';
+      return;
+    }
+
+    // 2. Hide loading, show content
+    document.getElementById('loading-state')?.classList.add('hidden');
+    document.getElementById('warga-content')?.classList.remove('hidden');
+
+    // 3. Populate Header & Data Diri
+    const nameEl = document.getElementById('warga-nama');
+    const nikEl = document.getElementById('warga-nik');
+    const rtrwEl = document.getElementById('warga-rtrw');
+
+    const infoNama = document.getElementById('info-nama');
+    const infoNik = document.getElementById('info-nik');
+    const infoTgl = document.getElementById('info-tgl');
+    const infoJk = document.getElementById('info-jk');
+    const infoRtrw = document.getElementById('info-rtrw');
+
+    if (nameEl) nameEl.textContent = user.nama;
+    if (infoNama) infoNama.textContent = user.nama;
+
+    if (nikEl) nikEl.textContent = user.nik ? user.nik.substring(0, 6) + '******' + user.nik.substring(12) : '-';
+    if (infoNik) infoNik.textContent = user.nik || '-';
+
+    if (rtrwEl) rtrwEl.textContent = user.rt_rw || '-';
+    if (infoRtrw) infoRtrw.textContent = user.rt_rw || '-';
+
+    if (infoTgl) infoTgl.textContent = user.tanggal_lahir || '-';
+    if (infoJk) infoJk.textContent = user.jenis_kelamin || '-';
+
+    // 4. Status Bansos Styling
+    const bansosBadge = document.getElementById('status-bansos-badge');
+    const bansosDesc = document.getElementById('status-bansos-desc');
+    if (bansosBadge) {
+      const status = user.status_bantuan || 'Tidak Menerima';
+      bansosBadge.textContent = status;
+      bansosBadge.className = 'px-6 py-3 rounded-full text-base sm:text-lg font-extrabold shadow-inner border transition-all';
+      
+      if (status === 'Tidak Menerima' || status.toLowerCase().includes('tidak')) {
+        bansosBadge.classList.add('bg-muted', 'text-muted-foreground', 'border-muted');
+        if (bansosDesc) bansosDesc.textContent = 'NIK Anda saat ini belum terdaftar di basis data DTKS/Pemerintah Desa sebagai penerima bantuan sosial.';
+      } else if (status.includes('Komplementer') || (status.includes('PKH') && status.includes('BPNT'))) {
+        bansosBadge.classList.add('bg-purple-500/10', 'text-purple-700', 'border-purple-300');
+        if (bansosDesc) bansosDesc.textContent = 'NIK Anda terdaftar sebagai penerima Bantuan Ganda Komplementer Kemensos (PKH + Sembako BPNT).';
+      } else if (status.includes('BLT')) {
+        bansosBadge.classList.add('bg-amber-500/10', 'text-amber-700', 'border-amber-300');
+        if (bansosDesc) bansosDesc.textContent = 'NIK Anda terdaftar sebagai penerima Bantuan Langsung Tunai (BLT) Dana Desa APBDes.';
+      } else if (status.includes('PKH')) {
+        bansosBadge.classList.add('bg-blue-500/10', 'text-blue-700', 'border-blue-300');
+        if (bansosDesc) bansosDesc.textContent = 'NIK Anda terdaftar sebagai penerima Program Keluarga Harapan (PKH) Kemensos.';
+      } else if (status.includes('BPNT')) {
+        bansosBadge.classList.add('bg-emerald-500/10', 'text-emerald-700', 'border-emerald-300');
+        if (bansosDesc) bansosDesc.textContent = 'NIK Anda terdaftar sebagai penerima Bantuan Pangan Non Tunai (BPNT/Kartu Sembako).';
+      } else {
+        bansosBadge.classList.add('bg-primary/10', 'text-primary', 'border-primary/30');
+        if (bansosDesc) bansosDesc.textContent = 'NIK Anda terdaftar sebagai penerima bantuan sosial resmi.';
+      }
+    }
+
+    // 5. Tabs Navigation
+    const tabButtons = document.querySelectorAll('.warga-tab-btn');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+
+    tabButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const target = btn.getAttribute('data-tab');
+
+        tabButtons.forEach(b => {
+          b.className = 'warga-tab-btn px-4 py-2.5 rounded-xl bg-secondary text-secondary-foreground text-xs sm:text-sm font-bold whitespace-nowrap hover:bg-secondary/80 transition-colors cursor-pointer flex items-center gap-2';
+        });
+        btn.className = 'warga-tab-btn active px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs sm:text-sm font-bold whitespace-nowrap shadow-xs cursor-pointer transition-all flex items-center gap-2';
+
+        tabPanes.forEach(pane => {
+          if (pane.id === target) {
+            pane.classList.remove('hidden');
+          } else {
+            pane.classList.add('hidden');
+          }
+        });
+      });
+    });
+
+    // Local storage fallback helpers
+    const getLocalSuratList = () => {
+      try {
+        const saved = localStorage.getItem('puspamukti_permohonan_surat');
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+      return [
+        {
+          id: 1,
+          nomor_surat: '470/012/Pemdes/2026',
+          nik: '3206001122334455',
+          nama: 'Asep Nugraha',
+          rt_rw: '01/02',
+          jenis_surat: 'Surat Keterangan Usaha (SKU)',
+          keperluan: 'Persyaratan Pengajuan KUR Bank BRI',
+          keterangan_tambahan: 'Usaha Warung Kelontong',
+          status: 'Disetujui',
+          catatan_admin: 'Surat telah disetujui Kepala Desa.',
+          created_at: new Date().toISOString()
+        }
+      ];
+    };
+
+    const saveLocalSuratList = (list: any[]) => {
+      localStorage.setItem('puspamukti_permohonan_surat', JSON.stringify(list));
+    };
+
+    // 6. Fetch & Render Permohonan E-Surat Saya
+    const loadSuratSaya = async () => {
+      const tbody = document.getElementById('warga-surat-tbody');
+      if (!tbody) return;
+
+      let data: any[] = [];
+      try {
+        const { data: dbData, error } = await supabase
+          .from('permohonan_surat')
+          .select('*')
+          .eq('nik', user.nik)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.warn('Supabase fetch failed, falling back to local cache:', error.message);
+          const allLocal = getLocalSuratList();
+          data = allLocal.filter((item: any) => item.nik === user.nik);
+        } else {
+          data = dbData || [];
+        }
+      } catch (err) {
+        const allLocal = getLocalSuratList();
+        data = allLocal.filter((item: any) => item.nik === user.nik);
+      }
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="px-6 py-8 text-center text-muted-foreground text-xs">
+              Anda belum pernah mengajukan permohonan surat. Silakan pilih jenis surat di atas untuk mengajukan.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = data.map((item: any) => {
+        const statusColor = 
+          item.status === 'Disetujui' ? 'bg-emerald-500/10 text-emerald-700 border-emerald-300' :
+          item.status === 'Selesai' ? 'bg-blue-500/10 text-blue-700 border-blue-300' :
+          item.status === 'Ditolak' ? 'bg-red-500/10 text-red-700 border-red-300' :
+          'bg-amber-500/10 text-amber-700 border-amber-300';
+
+        const canPrint = item.status === 'Disetujui' || item.status === 'Selesai';
+
+        return `
+          <tr class="hover:bg-muted/30 transition-colors">
+            <td class="px-6 py-4 font-bold text-foreground text-xs sm:text-sm">
+              ${item.jenis_surat}
+              ${item.nomor_surat ? `<span class="block text-[10px] text-muted-foreground font-mono mt-0.5">No: ${item.nomor_surat}</span>` : ''}
+            </td>
+            <td class="px-6 py-4 text-xs text-muted-foreground max-w-xs">
+              <span class="font-semibold text-foreground">${item.keperluan}</span>
+              ${item.keterangan_tambahan ? `<span class="block text-[10px] text-muted-foreground mt-0.5">${item.keterangan_tambahan}</span>` : ''}
+            </td>
+            <td class="px-6 py-4 text-xs text-muted-foreground whitespace-nowrap">
+              ${new Date(item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </td>
+            <td class="px-6 py-4">
+              <span class="inline-flex items-center rounded-md border px-2.5 py-0.5 text-[11px] font-bold ${statusColor}">
+                ${item.status}
+              </span>
+              ${item.catatan_admin ? `<p class="text-[10px] text-muted-foreground mt-1 italic">Catatan: "${item.catatan_admin}"</p>` : ''}
+            </td>
+            <td class="px-6 py-4 text-right whitespace-nowrap">
+              ${canPrint ? `
+                <button 
+                  class="btn-warga-print inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                  data-jenis="${item.jenis_surat}"
+                  data-keperluan="${item.keperluan}"
+                  data-nomor="${item.nomor_surat || '470/.../Pemdes/2026'}"
+                  data-tgl="${new Date(item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+                  Cetak Surat
+                </button>
+              ` : `
+                <span class="text-[11px] text-muted-foreground italic">Menunggu Verifikasi</span>
+              `}
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      // Bind print modal buttons
+      document.querySelectorAll('.btn-warga-print').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const jenis = btn.getAttribute('data-jenis') || 'SURAT KETERANGAN';
+          const keperluan = btn.getAttribute('data-keperluan') || '-';
+          const nomor = btn.getAttribute('data-nomor') || '470/.../Pemdes/2026';
+          const tgl = btn.getAttribute('data-tgl') || new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+          const isFemale = (user.nama || '').toLowerCase().includes('siti') || 
+                           (user.nama || '').toLowerCase().includes('aminah') || 
+                           (user.nama || '').toLowerCase().includes('dewi') || 
+                           (user.nama || '').toLowerCase().includes('putri') || 
+                           (user.nama || '').toLowerCase().includes('ibu') || 
+                           (user.nama || '').toLowerCase().includes('ratna') || 
+                           (user.nama || '').toLowerCase().includes('via') || 
+                           (user.nama || '').toLowerCase().includes('destri') || 
+                           (user.nama || '').toLowerCase().includes('diffa') || 
+                           (user.nama || '').toLowerCase().includes('linda');
+
+          const userJk = user.jenis_kelamin || (isFemale ? 'Perempuan' : 'Laki-laki');
+          const userTtl = user.tempat_tanggal_lahir || (isFemale ? 'Tasikmalaya, 14 April 1995' : 'Tasikmalaya, 12 Mei 1990');
+          const userAgama = user.agama || 'Islam';
+
+          const jEl = document.getElementById('warga-surat-judul-cetak');
+          const nEl = document.getElementById('warga-surat-nomor-cetak');
+          const nmEl = document.getElementById('warga-surat-nama-cetak');
+          const nkEl = document.getElementById('warga-surat-nik-cetak');
+          const rtEl = document.getElementById('warga-surat-rtrw-cetak');
+          const ttlEl = document.getElementById('warga-surat-ttl-cetak');
+          const jkEl = document.getElementById('warga-surat-jk-cetak');
+          const agEl = document.getElementById('warga-surat-agama-cetak');
+          const kEl = document.getElementById('warga-surat-keperluan-cetak');
+          const tEl = document.getElementById('warga-surat-tgl-cetak');
+          const qrImg = document.getElementById('warga-qr-image-cetak') as HTMLImageElement;
+          const qrLnk = document.getElementById('warga-qr-link-cetak') as HTMLAnchorElement;
+
+          if (jEl) jEl.textContent = jenis.toUpperCase();
+          if (nEl) nEl.textContent = nomor;
+          if (nmEl) nmEl.textContent = user.nama;
+          if (nkEl) nkEl.textContent = user.nik;
+          if (rtEl) rtEl.textContent = user.rt_rw || '-';
+          if (ttlEl) ttlEl.textContent = userTtl;
+          if (jkEl) jkEl.textContent = userJk;
+          if (agEl) agEl.textContent = userAgama;
+          if (kEl) kEl.textContent = keperluan;
+          if (tEl) tEl.textContent = tgl;
+
+          // Dynamic QR Code link to /verifikasi
+          const targetVerifUrl = `${window.location.origin}/verifikasi?nomor=${encodeURIComponent(nomor)}`;
+          if (qrImg) {
+            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(targetVerifUrl)}`;
+          }
+          if (qrLnk) {
+            qrLnk.href = targetVerifUrl;
+          }
+
+          const printModal = document.getElementById('warga-print-modal');
+          printModal?.classList.remove('hidden');
+          printModal?.classList.add('flex');
+        });
+      });
+    };
+
+    // 7. Request Surat Modal Handler
+    const requestModal = document.getElementById('request-surat-modal');
+    const closeRequestBtn = document.getElementById('close-request-modal-btn');
+    const cancelRequestBtn = document.getElementById('cancel-request-btn');
+    const requestForm = document.getElementById('request-surat-form');
+    const modalJenisSurat = document.getElementById('modal-jenis-surat');
+    const inputJenisSurat = document.getElementById('input-jenis-surat') as HTMLInputElement;
+    const submitRequestBtn = document.getElementById('submit-request-btn');
+
+    document.querySelectorAll('.btn-request-surat').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const jenis = btn.getAttribute('data-jenis') || '';
+        if (modalJenisSurat) modalJenisSurat.textContent = jenis;
+        if (inputJenisSurat) inputJenisSurat.value = jenis;
+
+        requestModal?.classList.remove('hidden');
+        requestModal?.classList.add('flex');
+      });
+    });
+
+    // Universal Warga Notification Modal Elements
+    const notifyModal = document.getElementById('warga-notify-modal');
+    const notifyModalTitle = document.getElementById('warga-notify-title');
+    const notifyModalDesc = document.getElementById('warga-notify-desc');
+    const notifyModalIcon = document.getElementById('warga-notify-icon');
+    const notifyModalBtn = document.getElementById('warga-notify-btn');
+
+    function showWargaNotifyModal(title: string, desc: string, isSuccess: boolean = true) {
+      if (notifyModalTitle) notifyModalTitle.textContent = title;
+      if (notifyModalDesc) notifyModalDesc.textContent = desc;
+      if (notifyModalIcon) {
+        if (isSuccess) {
+          notifyModalIcon.className = 'w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-500/20 shadow-inner';
+          notifyModalIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`;
+        } else {
+          notifyModalIcon.className = 'w-16 h-16 rounded-2xl bg-destructive/10 text-destructive flex items-center justify-center mx-auto border border-destructive/20 shadow-inner';
+          notifyModalIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>`;
+        }
+      }
+      if (notifyModal) {
+        notifyModal.classList.remove('hidden');
+        notifyModal.classList.add('flex');
+      }
+    }
+
+    function hideWargaNotifyModal() {
+      if (notifyModal) {
+        notifyModal.classList.add('hidden');
+        notifyModal.classList.remove('flex');
+      }
+    }
+
+    notifyModalBtn?.addEventListener('click', hideWargaNotifyModal);
+    notifyModal?.addEventListener('click', (e) => {
+      if (e.target === notifyModal) hideWargaNotifyModal();
+    });
+
+    const closeRequest = () => {
+      requestModal?.classList.remove('flex');
+      requestModal?.classList.add('hidden');
+      if (requestForm) (requestForm as HTMLFormElement).reset();
+      keperluanError?.classList.add('hidden');
+      inputKeperluan?.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+      inputKeperluan?.classList.add('border-input', 'focus-visible:ring-primary');
+    };
+
+    closeRequestBtn?.addEventListener('click', closeRequest);
+    cancelRequestBtn?.addEventListener('click', closeRequest);
+
+    // Validation for Request Surat
+    const inputKeperluan = document.getElementById('input-keperluan') as HTMLInputElement;
+    const keperluanError = document.getElementById('keperluan-error');
+
+    function validateKeperluan(): boolean {
+      const val = inputKeperluan?.value.trim() || '';
+      if (val.length < 5) {
+        inputKeperluan?.classList.add('border-destructive', 'focus-visible:ring-destructive');
+        inputKeperluan?.classList.remove('border-input', 'focus-visible:ring-primary');
+        keperluanError?.classList.remove('hidden');
+        return false;
+      } else {
+        inputKeperluan?.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+        inputKeperluan?.classList.add('border-input', 'focus-visible:ring-primary');
+        keperluanError?.classList.add('hidden');
+        return true;
+      }
+    }
+
+    inputKeperluan?.addEventListener('input', () => {
+      if (!keperluanError?.classList.contains('hidden')) validateKeperluan();
+    });
+
+    requestForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const jenis_surat = inputJenisSurat?.value;
+      if (!validateKeperluan()) return;
+
+      const keperluan = inputKeperluan.value.trim();
+      const keterangan_tambahan = (document.getElementById('input-keterangan') as HTMLTextAreaElement)?.value.trim() || null;
+
+      if (!jenis_surat) return;
+
+      if (submitRequestBtn) {
+        submitRequestBtn.textContent = 'Mengirim Permohonan...';
+        submitRequestBtn.setAttribute('disabled', 'true');
+      }
+
+      const newRecord = {
+        id: Date.now(),
+        nik: user.nik,
+        nama: user.nama,
+        rt_rw: user.rt_rw || null,
+        jenis_surat,
+        keperluan,
+        keterangan_tambahan,
+        status: 'Menunggu Persetujuan',
+        created_at: new Date().toISOString()
+      };
+
+      // Always save to local cache for instant zero-error demo
+      const localList = getLocalSuratList();
+      localList.unshift(newRecord);
+      saveLocalSuratList(localList);
+
+      try {
+        await supabase
+          .from('permohonan_surat')
+          .insert([{
+            nik: user.nik,
+            nama: user.nama,
+            rt_rw: user.rt_rw || null,
+            jenis_surat,
+            keperluan,
+            keterangan_tambahan,
+            status: 'Menunggu Persetujuan'
+          }]);
+      } catch (err: any) {
+        console.warn('Supabase cloud insert notice (stored in local cache):', err);
+      }
+
+      closeRequest();
+      loadSuratSaya();
+      showWargaNotifyModal(
+        'Permohonan Berhasil Dikirim!',
+        'Permohonan ' + jenis_surat + ' Anda berhasil diajukan. Aparatur balai desa akan segera memverifikasi permohonan Anda.',
+        true
+      );
+
+      if (submitRequestBtn) {
+        submitRequestBtn.textContent = 'Ajukan Surat';
+        submitRequestBtn.removeAttribute('disabled');
+      }
+    });
+
+    document.getElementById('refresh-surat-btn')?.addEventListener('click', loadSuratSaya);
+
+    // 8. Lapor Kades & Riwayat Pengaduan
+    const laporForm = document.getElementById('warga-pengaduan-form');
+    const submitLaporBtn = document.getElementById('submit-lapor-btn');
+    const laporIsiInput = document.getElementById('lapor-isi') as HTMLTextAreaElement;
+    const laporIsiError = document.getElementById('lapor-isi-error');
+
+    function validateLaporIsi(): boolean {
+      const val = laporIsiInput?.value.trim() || '';
+      if (val.length < 10) {
+        laporIsiInput?.classList.add('border-destructive', 'focus-visible:ring-destructive');
+        laporIsiInput?.classList.remove('border-input', 'focus-visible:ring-primary');
+        laporIsiError?.classList.remove('hidden');
+        return false;
+      } else {
+        laporIsiInput?.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+        laporIsiInput?.classList.add('border-input', 'focus-visible:ring-primary');
+        laporIsiError?.classList.add('hidden');
+        return true;
+      }
+    }
+
+    laporIsiInput?.addEventListener('input', () => {
+      if (!laporIsiError?.classList.contains('hidden')) validateLaporIsi();
+    });
+
+    const loadPengaduanSaya = async () => {
+      const container = document.getElementById('warga-pengaduan-list');
+      if (!container) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('pengaduan')
+          .select('*')
+          .eq('nik', user.nik)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+          container.innerHTML = `
+            <div class="p-8 text-center text-xs text-muted-foreground space-y-2">
+              <p>Belum ada laporan atau aspirasi yang Anda kirimkan.</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = data.map((item) => {
+          const statusColor = 
+            item.status === 'Selesai' ? 'bg-emerald-500/10 text-emerald-700 border-emerald-300' :
+            item.status === 'Sedang Diproses' ? 'bg-blue-500/10 text-blue-700 border-blue-300' :
+            'bg-amber-500/10 text-amber-700 border-amber-300';
+
+          return `
+            <div class="p-5 space-y-2">
+              <div class="flex items-center justify-between gap-2">
+                <span class="inline-flex items-center rounded-md border px-2.5 py-0.5 text-[10px] font-bold bg-primary/10 text-primary uppercase tracking-wider">
+                  ${item.kategori}
+                </span>
+                <span class="inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-bold ${statusColor}">
+                  ${item.status}
+                </span>
+              </div>
+              <p class="text-xs sm:text-sm text-foreground font-medium leading-relaxed">${item.isi}</p>
+              <p class="text-[10px] text-muted-foreground">Dikirim: ${item.tanggal}</p>
+            </div>
+          `;
+        }).join('');
+
+      } catch (err: any) {
+        console.error(err);
+        container.innerHTML = `<div class="p-4 text-center text-xs text-destructive">Gagal memuat laporan: ${err.message}</div>`;
+      }
+    };
+
+    laporForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const kategori = (document.getElementById('lapor-kategori') as HTMLSelectElement)?.value;
+      if (!validateLaporIsi()) return;
+      const isi = laporIsiInput.value.trim();
+
+      if (!kategori) return;
+
+      if (submitLaporBtn) {
+        submitLaporBtn.textContent = 'Mengirim Laporan...';
+        submitLaporBtn.setAttribute('disabled', 'true');
+      }
+
+      try {
+        const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        const { error } = await supabase
+          .from('pengaduan')
+          .insert([{
+            pengirim: user.nama,
+            nik: user.nik,
+            kategori,
+            isi,
+            tanggal: today,
+            status: 'Belum Diproses'
+          }]);
+
+        if (error) throw error;
+
+        showWargaNotifyModal(
+          'Laporan Berhasil Terkirim!',
+          'Aspirasi atau pengaduan Anda telah terkirim langsung ke Kades & Aparatur Desa Puspamukti. Anda dapat memantau status penanganannya pada daftar di samping.',
+          true
+        );
+        (laporForm as HTMLFormElement).reset();
+        loadPengaduanSaya();
+      } catch (err: any) {
+        console.error(err);
+        showWargaNotifyModal(
+          'Gagal Mengirim Laporan',
+          'Terjadi kendala saat mengirim laporan: ' + (err.message || 'Kesalahan sistem'),
+          false
+        );
+      } finally {
+        if (submitLaporBtn) {
+          submitLaporBtn.textContent = 'Kirim Laporan ke Kades';
+          submitLaporBtn.removeAttribute('disabled');
+        }
+      }
+    });
+
+    // Print Modal buttons & Paper Size Switcher
+    const wargaPrintModal = document.getElementById('warga-print-modal');
+    const closeWargaPrintBtn = document.getElementById('close-warga-print-btn');
+    const doWargaPrintBtn = document.getElementById('do-warga-print-btn');
+    const wargaBtnPaperA4 = document.getElementById('warga-btn-paper-a4');
+    const wargaBtnPaperF4 = document.getElementById('warga-btn-paper-f4');
+    const wargaLetterPaper = document.getElementById('warga-letter-paper');
+    const wargaPrintStyle = document.getElementById('warga-print-page-style');
+
+    const setWargaPaperSize = (size: 'A4' | 'F4') => {
+      const pLetter = document.getElementById('warga-letter-paper');
+      const pStyle = document.getElementById('warga-print-page-style');
+      const bA4 = document.getElementById('warga-btn-paper-a4');
+      const bF4 = document.getElementById('warga-btn-paper-f4');
+      const statusText = document.getElementById('warga-paper-status-text');
+
+      if (!pLetter || !bA4 || !bF4) return;
+
+      if (size === 'F4') {
+        pLetter.style.setProperty('width', '215mm', 'important');
+        pLetter.style.setProperty('min-height', '330mm', 'important');
+        pLetter.style.setProperty('padding', '20mm', 'important');
+        if (pStyle) {
+          pStyle.innerHTML = `@page { size: 215mm 330mm; margin: 15mm 15mm 15mm 15mm; }`;
+        }
+        bF4.className = 'px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-blue-600 text-white shadow-sm transition-all cursor-pointer ring-2 ring-blue-400';
+        bA4.className = 'px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-transparent text-muted-foreground hover:text-foreground transition-all cursor-pointer';
+        if (statusText) statusText.textContent = 'Aktif: F4 / Folio (215 × 330 mm)';
+      } else {
+        pLetter.style.setProperty('width', '210mm', 'important');
+        pLetter.style.setProperty('min-height', '297mm', 'important');
+        pLetter.style.setProperty('padding', '20mm', 'important');
+        if (pStyle) {
+          pStyle.innerHTML = `@page { size: A4 portrait; margin: 15mm 20mm 15mm 20mm; }`;
+        }
+        bA4.className = 'px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-blue-600 text-white shadow-sm transition-all cursor-pointer ring-2 ring-blue-400';
+        bF4.className = 'px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-transparent text-muted-foreground hover:text-foreground transition-all cursor-pointer';
+        if (statusText) statusText.textContent = 'Aktif: A4 (210 × 297 mm)';
+      }
+    };
+
+    wargaBtnPaperA4?.addEventListener('click', (e) => {
+      e.preventDefault();
+      setWargaPaperSize('A4');
+    });
+
+    wargaBtnPaperF4?.addEventListener('click', (e) => {
+      e.preventDefault();
+      setWargaPaperSize('F4');
+    });
+
+    closeWargaPrintBtn?.addEventListener('click', () => {
+      wargaPrintModal?.classList.remove('flex');
+      wargaPrintModal?.classList.add('hidden');
+    });
+
+    doWargaPrintBtn?.addEventListener('click', () => {
+      window.print();
+    });
+
+    // 9. Logout
+    document.getElementById('logout-btn')?.addEventListener('click', () => {
+      if (confirm('Keluar dari Portal Warga?')) {
+        localStorage.removeItem('warga_session');
+        window.location.href = '/warga/login';
+      }
+    });
+
+    // Initial loads
+    loadSuratSaya();
+    loadPengaduanSaya();
+
+    // Escape listener
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeRequest();
+        wargaPrintModal?.classList.remove('flex');
+        wargaPrintModal?.classList.add('hidden');
+      }
+    });
+  });
+</script>

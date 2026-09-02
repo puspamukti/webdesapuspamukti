@@ -1,0 +1,22 @@
+---
+import '../styles/global.css';
+
+interface Props {
+	title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="id">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/webp" href="/logodesa.webp" />
+		<title>{title} | Admin Puspamukti</title>
+	</head>
+	<body class="min-h-screen bg-muted/30 font-sans antialiased text-foreground">
+		<slot />
+	</body>
+</html>

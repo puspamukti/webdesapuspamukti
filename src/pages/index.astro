@@ -1,0 +1,475 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { Button } from '../components/ui/button';
+import { supabase } from '../lib/supabase';
+import { encodeId } from '../lib/utils';
+
+// Fetch stats
+const { data: dbStats } = await supabase
+  .from('statistik')
+  .select('*')
+  .single();
+
+const statsData = dbStats || { total_penduduk: 4250, total_kk: 1320, total_dusun: 5, total_rt: 32, total_rw: 8 };
+const formatK = (num: number) => (num / 1000).toFixed(1) + 'K';
+
+// Fetch Kades & PKK
+const { data: dbStaff } = await supabase
+  .from('perangkat_desa')
+  .select('*');
+
+const kades = dbStaff?.find(s => s.jabatan === 'Kepala Desa') || { nama: "Belum Diatur", foto_url: null };
+const pkk = dbStaff?.find(s => s.jabatan.includes('PKK')) || { nama: "Belum Diatur", foto_url: null };
+
+// Fetch Wisata for gallery
+const { data: dbWisata } = await supabase
+  .from('wisata')
+  .select('*')
+  .limit(4);
+
+const galleryItems = dbWisata && dbWisata.length > 0 ? dbWisata : [
+  { nama: "Curug Puspamukti", gambar_url: null },
+  { nama: "Sentra Kerajinan", gambar_url: null },
+  { nama: "Agrowisata Salak", gambar_url: null },
+  { nama: "Pesona Alam", gambar_url: null }
+];
+
+// Fetch Kantor Desa coordinate for homepage map preview
+const { data: dbKadesPin } = await supabase
+  .from('peta_lokasi')
+  .select('*')
+  .eq('tipe', 'Kantor Desa')
+  .maybeSingle();
+
+const mapCoords = dbKadesPin && dbKadesPin.lat && dbKadesPin.lng
+  ? [parseFloat(dbKadesPin.lat), parseFloat(dbKadesPin.lng)]
+  : [-7.355, 108.016];
+
+// Fetch Berita
+const { data: latestNews } = await supabase
+  .from('berita')
+  .select('*')
+  .eq('status', 'Terbit')
+  .order('id', { ascending: false })
+  .limit(4);
+
+const newsItems = latestNews && latestNews.length > 0 ? latestNews : [
+  { judul: "Penyaluran BLT Dana Desa Tahap III Tahun 2026", kategori: "Kegiatan Desa", tanggal: "12 Agustus 2026" },
+  { judul: "Peresmian Jalan Baru di Dusun Puspajaya", kategori: "Infrastruktur", tanggal: "8 Agustus 2026" },
+  { judul: "Bupati Dan Wakil Bupati Tasikmalaya Hadiri Safari Tarawih", kategori: "Pemerintahan", tanggal: "7 Maret 2026" }
+];
+
+// Fetch Agenda
+const { data: latestAgenda } = await supabase
+  .from('agenda')
+  .select('*')
+  .order('id', { ascending: true })
+  .limit(2);
+
+const agendaItems = latestAgenda && latestAgenda.length > 0 ? latestAgenda : [
+  { nama: "Musyawarah Desa (Musdes) RKPDes", tanggal: "15 Maret 2026", waktu: "09:00 WIB - Selesai", lokasi: "Balai Desa Puspamukti" }
+];
+
+---
+
+<Layout title="Beranda">
+  <!-- Leaflet CSS loaded with print trick for non-render-blocking -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" media="print" onload="this.media='all'" />
+  <main class="flex-1 w-full">
+    <!-- Hero Section -->
+    <section class="w-full relative bg-gradient-to-br from-primary/10 via-background to-secondary/10 pt-24 pb-32 overflow-hidden">
+      <!-- Decorative blobs -->
+      <div class="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
+        <div class="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-primary/20 blur-[120px]" />
+        <div class="absolute top-[40%] -right-[10%] w-[50%] h-[50%] rounded-full bg-blue-500/10 blur-[120px]" />
+      </div>
+      
+      <div class="container mx-auto px-4 max-w-screen-xl">
+        <div class="flex flex-col items-center text-center space-y-8 max-w-3xl mx-auto relative z-10">
+          <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary/10 text-primary hover:bg-primary/20 mb-4">
+            Sejati Diri Bertaji
+          </div>
+          <h1 class="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.1]">
+            Selamat Datang di <br/>
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-600">Desa Puspamukti</span>
+          </h1>
+          <p class="text-lg md:text-xl text-muted-foreground leading-relaxed">
+            Portal informasi resmi dan pelayanan publik Pemerintah Desa Puspamukti, Kecamatan Cigalontang, Kabupaten Tasikmalaya. Transparan, Informatif, dan Melayani.
+          </p>
+          <div class="flex flex-wrap items-center justify-center gap-4 pt-4">
+            <a href="/warga/login" class="inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-bold bg-primary text-primary-foreground hover:bg-primary/90 h-12 px-8 shadow-md hover:shadow-lg transition-all gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Portal Warga
+            </a>
+            <a href="/layanan" class="inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-bold border border-input bg-card text-foreground hover:bg-accent hover:text-accent-foreground h-12 px-8 shadow-2xs transition-all gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Layanan Publik
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quick Stats -->
+    <section class="py-16 bg-card border-y">
+      <div class="container mx-auto px-4 max-w-screen-2xl">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 divide-x divide-border">
+          <div class="flex flex-col items-center justify-center text-center px-4">
+            <span id="stats-dusun" class="text-4xl font-bold text-primary mb-2">{statsData.total_dusun || 5}</span>
+            <span class="text-sm text-muted-foreground uppercase tracking-wider font-semibold">Dusun</span>
+          </div>
+          <div class="flex flex-col items-center justify-center text-center px-4">
+            <span id="stats-rt" class="text-4xl font-bold text-primary mb-2">{statsData.total_rt || 32}</span>
+            <span class="text-sm text-muted-foreground uppercase tracking-wider font-semibold">RT</span>
+          </div>
+          <div class="flex flex-col items-center justify-center text-center px-4">
+            <span id="stats-rw" class="text-4xl font-bold text-primary mb-2">{statsData.total_rw || 8}</span>
+            <span class="text-sm text-muted-foreground uppercase tracking-wider font-semibold">RW</span>
+          </div>
+          <div class="flex flex-col items-center justify-center text-center px-4">
+            <span id="stats-penduduk" class="text-4xl font-bold text-primary mb-2">{formatK(statsData.total_penduduk)}</span>
+            <span class="text-sm text-muted-foreground uppercase tracking-wider font-semibold">Penduduk</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sambutan Kades -->
+    <section class="py-16 bg-muted/30 border-b overflow-hidden">
+      <div class="container mx-auto px-4 max-w-screen-xl">
+        <div class="flex flex-col md:flex-row items-center gap-12">
+          <div class="w-full md:w-5/12 flex justify-center gap-4 sm:gap-6 relative">
+            <!-- Decorative circle -->
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary/20 rounded-full blur-3xl -z-10"></div>
+            
+            <!-- Foto Kades -->
+            <div class="relative w-40 sm:w-48 h-56 sm:h-64 rounded-2xl overflow-hidden border-4 border-background shadow-xl group">
+              <div class="absolute inset-0 bg-gradient-to-tr from-primary/40 to-muted flex items-center justify-center">
+                <img id="kades-img" src={kades.foto_url || ''} alt={kades.nama} width="192" height="256" loading="lazy" decoding="async" class={`w-full h-full object-cover transition-transform group-hover:scale-105 duration-700 ${!kades.foto_url ? 'hidden' : ''}`} />
+                <div id="kades-placeholder" class={`absolute inset-0 flex items-center justify-center bg-muted ${kades.foto_url ? 'hidden' : ''}`}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="text-primary/60"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+              </div>
+              <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 pt-12 text-white text-center transform translate-y-2 group-hover:translate-y-0 transition-transform z-20">
+                <p id="kades-name" class="font-bold text-sm">{kades.nama}</p>
+                <p class="text-[10px] text-gray-300">Kepala Desa</p>
+              </div>
+            </div>
+            
+            <!-- Foto Ketua PKK -->
+            <div class="relative w-40 sm:w-48 h-56 sm:h-64 rounded-2xl overflow-hidden border-4 border-background shadow-xl group mt-8 sm:mt-12">
+              <div class="absolute inset-0 bg-gradient-to-tr from-primary/30 to-muted flex items-center justify-center">
+                <img id="pkk-img" src={pkk.foto_url || ''} alt={pkk.nama} width="192" height="256" loading="lazy" decoding="async" class={`w-full h-full object-cover transition-transform group-hover:scale-105 duration-700 ${!pkk.foto_url ? 'hidden' : ''}`} />
+                <div id="pkk-placeholder" class={`absolute inset-0 flex items-center justify-center bg-muted ${pkk.foto_url ? 'hidden' : ''}`}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="text-primary/60"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+              </div>
+              <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 pt-12 text-white text-center transform translate-y-2 group-hover:translate-y-0 transition-transform z-20">
+                <p id="pkk-name" class="font-bold text-sm">{pkk.nama}</p>
+                <p class="text-[10px] text-gray-300">Ketua TP-PKK</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="w-full md:w-7/12 space-y-6 text-center md:text-left">
+            <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary/10 text-primary hover:bg-primary/20">
+              Pemerintahan Desa
+            </div>
+            <h2 class="text-3xl md:text-4xl font-bold tracking-tight">Menuju Puspamukti Mandiri & Bertaji</h2>
+            <div class="space-y-4 text-muted-foreground leading-relaxed text-base md:text-lg">
+              <p>
+                Bismillahirahmanirrahim. Assalamu'alaikum Warahmatullahi Wabarakatuh.
+              </p>
+              <p>
+                Selamat datang di portal resmi Desa Puspamukti. Website ini merupakan perwujudan dari komitmen kami untuk menghadirkan pelayanan publik yang transparan, inovatif, dan responsif terhadap kebutuhan warga di era digital.
+              </p>
+              <p>
+                Melalui platform ini, kami berharap seluruh elemen masyarakat dapat dengan mudah mengakses informasi pembangunan, layanan administrasi, regulasi desa, serta turut memajukan potensi yang kita kembangkan bersama.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+
+    <!-- Pusat Informasi Desa (Full Width) -->
+    <section class="py-16">
+      <div class="container mx-auto px-4 max-w-screen-xl space-y-8">
+        <div class="flex items-center justify-between border-b pb-4">
+          <h2 class="text-3xl font-bold tracking-tight text-foreground">Pusat Informasi Desa</h2>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          <!-- 1. Media & Informasi (Takes 2 Columns) -->
+          <div class="lg:col-span-2 space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xl font-semibold flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
+                Media & Berita Terkini
+              </h3>
+              <a href="/informasi/media" class="text-sm font-medium text-primary hover:underline">Selengkapnya &rarr;</a>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {newsItems.map((news) => (
+                <a href={news.id ? `/informasi/media/${encodeId(news.id)}` : "/informasi/media"} class="group rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden hover:shadow-md transition-all flex flex-col">
+                  <div class="aspect-video bg-muted relative overflow-hidden">
+                    {news.gambar_url ? (
+                      <img src={news.gambar_url} alt={news.judul} width="400" height="225" loading="lazy" decoding="async" class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-500" />
+                    ) : (
+                      <div class="absolute inset-0 bg-secondary/50 flex items-center justify-center text-muted-foreground group-hover:scale-105 transition-transform duration-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                      </div>
+                    )}
+                  </div>
+                  <div class="p-4 space-y-2 flex-1 flex flex-col justify-between">
+                    <div>
+                      <div class="text-[10px] font-medium text-primary bg-primary/10 w-fit px-2 py-0.5 rounded-full mb-2">{news.kategori}</div>
+                      <h4 class="font-bold text-base leading-tight group-hover:text-primary transition-colors line-clamp-2">{news.judul || news.title}</h4>
+                    </div>
+                    <div class="text-xs text-muted-foreground pt-2 flex items-center gap-1.5 mt-auto">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                      {news.tanggal || news.date}
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+          
+          <!-- 2. Informasi Tambahan (Takes 1 Column, Stacked) -->
+          <div class="lg:col-span-1 flex flex-col gap-6 h-full justify-between">
+            
+            <!-- Informasi Bencana -->
+            <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6 space-y-4 flex flex-col">
+              <div class="flex items-center gap-2 text-amber-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <h3 class="text-xl font-semibold text-foreground">Siaga Bencana</h3>
+              </div>
+              <div class="bg-green-500/10 border border-green-500/20 rounded-lg p-3">
+                <div class="flex items-center gap-2 mb-1">
+                  <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                  <span class="text-sm font-bold text-green-700 dark:text-green-500">Status: Aman Terkendali</span>
+                </div>
+                <p class="text-xs text-muted-foreground mt-1">
+                  Tidak ada peringatan cuaca ekstrim di wilayah Desa Puspamukti saat ini.
+                </p>
+              </div>
+              <a href="/informasi/bencana" class="inline-flex w-full items-center justify-center rounded-md border border-input bg-background h-10 px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground">
+                Lihat Laporan
+              </a>
+            </div>
+
+            <!-- Peta & Zona Khusus -->
+            <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6 space-y-4 flex flex-col">
+              <div class="flex items-center gap-2 text-blue-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+                <h3 class="text-xl font-semibold text-foreground">Peta Wilayah</h3>
+              </div>
+              <div class="w-full aspect-video bg-muted rounded-lg border relative overflow-hidden group z-10">
+                 <div id="homepage-map" class="w-full h-full"></div>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <a href="/informasi/peta" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-10 px-2 py-2 text-xs font-medium transition-colors hover:bg-primary/90">
+                  Peta Desa
+                </a>
+                <a href="/informasi/zona-khusus" class="inline-flex items-center justify-center rounded-md border border-input bg-background h-10 px-2 py-2 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground">
+                  Zona Khusus
+                </a>
+              </div>
+            </div>
+
+            <!-- Agenda Desa -->
+            <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6 space-y-4 flex flex-col">
+              <div class="flex items-center gap-2 text-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                <h3 class="text-xl font-semibold text-foreground">Agenda Desa</h3>
+              </div>
+              <div class="space-y-4">
+                {agendaItems.map((agenda) => {
+                  const parts = (agenda.tanggal || "").split(' ');
+                  const day = parts[0] || '15';
+                  const month = parts[1]?.substring(0, 3) || 'Mar';
+                  return (
+                    <div class="flex items-start gap-3">
+                       <div class="bg-primary/10 text-primary rounded-md p-2 text-center leading-none border border-primary/20 w-12 flex-shrink-0">
+                          <span class="block text-[10px] font-bold uppercase">{month}</span>
+                          <span class="block text-base font-black mt-0.5">{day}</span>
+                       </div>
+                       <div>
+                          <h4 class="text-sm font-bold leading-tight">{agenda.nama}</h4>
+                          <p class="text-xs text-muted-foreground mt-0.5">{agenda.lokasi}</p>
+                       </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Layanan & Transparansi -->
+    <section class="py-16 bg-muted/30 border-y">
+      <div class="container mx-auto px-4 max-w-screen-xl">
+        <div class="text-center mb-12 space-y-2">
+          <h2 class="text-3xl font-bold tracking-tight">Layanan & Transparansi</h2>
+          <p class="text-muted-foreground">Kemudahan akses layanan administrasi dan keterbukaan informasi publik</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <a href="/layanan" class="group flex flex-col items-center text-center p-8 bg-background rounded-2xl border shadow-sm hover:shadow-md hover:border-primary/50 transition-all">
+            <div class="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            </div>
+            <h3 class="text-xl font-bold mb-2 group-hover:text-primary transition-colors">Pelayanan Publik</h3>
+            <p class="text-sm text-muted-foreground">Sistem Administrasi Terpadu dan Anjungan Desa Mandiri untuk melayani kebutuhan surat menyurat warga.</p>
+          </a>
+          
+          <a href="/regulasi" class="group flex flex-col items-center text-center p-8 bg-background rounded-2xl border shadow-sm hover:shadow-md hover:border-primary/50 transition-all">
+            <div class="w-16 h-16 bg-amber-500/10 text-amber-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            </div>
+            <h3 class="text-xl font-bold mb-2 group-hover:text-amber-600 transition-colors">Regulasi Desa</h3>
+            <p class="text-sm text-muted-foreground">Kumpulan Peraturan Desa (Perdes), Peraturan Kepala Desa, dan dokumen legalitas pemerintahan desa.</p>
+          </a>
+
+          <a href="/transparansi" class="group flex flex-col items-center text-center p-8 bg-background rounded-2xl border shadow-sm hover:shadow-md hover:border-primary/50 transition-all">
+            <div class="w-16 h-16 bg-green-500/10 text-green-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <h3 class="text-xl font-bold mb-2 group-hover:text-green-600 transition-colors">Transparansi Anggaran</h3>
+            <p class="text-sm text-muted-foreground">Laporan realisasi serapan APBDes sebagai wujud akuntabilitas Pemerintah Desa Puspamukti.</p>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Potensi & Desa Wisata -->
+    <section class="py-16">
+      <div class="container mx-auto px-4 max-w-screen-xl">
+        <div class="flex flex-col md:flex-row items-center gap-12 bg-gradient-to-br from-primary/10 to-transparent rounded-3xl p-8 md:p-12 border">
+          <div class="w-full md:w-1/2 space-y-6">
+            <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground">
+              Pesona Puspamukti
+            </div>
+            <h2 class="text-3xl md:text-4xl font-bold tracking-tight text-foreground">Potensi & Desa Wisata</h2>
+            <p class="text-lg text-muted-foreground leading-relaxed">
+              Jelajahi keindahan alam, kekayaan budaya, serta produk unggulan UMKM dan BUMDes yang ada di Desa Puspamukti. Kami terus berinovasi menggerakkan ekonomi warga melalui pengelolaan potensi desa yang berkelanjutan.
+            </p>
+            <div class="pt-4">
+              <a href="/profil/desa-wisata" class="inline-flex items-center justify-center rounded-xl bg-primary text-primary-foreground h-11 px-8 font-bold transition-all hover:bg-primary/90 shadow-md gap-2">
+                <span>Jelajahi Desa Wisata</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+              </a>
+            </div>
+          </div>
+          <div class="w-full md:w-1/2">
+            <div class="grid grid-cols-2 gap-4">
+              <!-- Left Column -->
+              <div class="space-y-4 pt-8">
+                {galleryItems.slice(0, 2).map((item, idx) => (
+                  <div class="aspect-square bg-muted rounded-2xl overflow-hidden relative shadow-sm hover:shadow-md transition-all group border">
+                    <img id={`gallery-img-${idx}`} src={item.gambar_url || ''} alt={item.nama} width="300" height="300" loading="lazy" decoding="async" class={`w-full h-full object-cover transition-transform group-hover:scale-105 duration-700 ${!item.gambar_url ? 'hidden' : ''}`} />
+                    <div id={`gallery-placeholder-${idx}`} class={`absolute inset-0 bg-secondary/30 flex items-center justify-center text-muted-foreground group-hover:scale-105 transition-transform duration-700 ${item.gambar_url ? 'hidden' : ''}`}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="opacity-50"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                    </div>
+                    <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-4 text-white text-xs font-bold transform translate-y-full group-hover:translate-y-0 transition-transform">
+                      <span id={`gallery-text-${idx}`}>{item.nama}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <!-- Right Column -->
+              <div class="space-y-4">
+                {galleryItems.slice(2, 4).map((item, idx) => {
+                  const realIdx = idx + 2;
+                  return (
+                    <div class="aspect-square bg-muted rounded-2xl overflow-hidden relative shadow-sm hover:shadow-md transition-all group border">
+                      <img id={`gallery-img-${realIdx}`} src={item.gambar_url || ''} alt={item.nama} width="300" height="300" loading="lazy" decoding="async" class={`w-full h-full object-cover transition-transform group-hover:scale-105 duration-700 ${!item.gambar_url ? 'hidden' : ''}`} />
+                      <div id={`gallery-placeholder-${realIdx}`} class={`absolute inset-0 bg-secondary/30 flex items-center justify-center text-muted-foreground group-hover:scale-105 transition-transform duration-700 ${item.gambar_url ? 'hidden' : ''}`}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="opacity-50"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                      </div>
+                      <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-4 text-white text-xs font-bold transform translate-y-full group-hover:translate-y-0 transition-transform">
+                        <span id={`gallery-text-${realIdx}`}>{item.nama}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</Layout>
+
+<!-- Optimized Deferred Leaflet Loader -->
+<script is:inline define:vars={{ mapCoords }}>
+  (function() {
+    const mapEl = document.getElementById('homepage-map');
+    if (!mapEl) return;
+
+    function initMap() {
+      if (window.leafletLoaded || typeof L === 'undefined') return;
+      window.leafletLoaded = true;
+
+      const map = L.map('homepage-map', {
+        zoomControl: false,
+        dragging: false,
+        scrollWheelZoom: false,
+        doubleClickZoom: false,
+        touchZoom: false
+      }).setView(mapCoords, 15);
+
+      // Fix default Leaflet icon paths
+      delete L.Icon.Default.prototype._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+      });
+
+      L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        attribution: '&copy; Google Maps'
+      }).addTo(map);
+
+      L.marker(mapCoords).addTo(map)
+        .bindPopup('<b>Kantor Desa Puspamukti</b>')
+        .openPopup();
+    }
+
+    function loadLeafletAndInit() {
+      if (typeof L !== 'undefined') {
+        initMap();
+      } else {
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
+        script.crossOrigin = '';
+        script.defer = true;
+        script.onload = initMap;
+        document.head.appendChild(script);
+      }
+    }
+
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+          observer.disconnect();
+          loadLeafletAndInit();
+        }
+      }, { rootMargin: '200px' });
+      observer.observe(mapEl);
+    } else {
+      window.addEventListener('load', loadLeafletAndInit);
+    }
+  })();
+</script>

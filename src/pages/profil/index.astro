@@ -1,0 +1,314 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+const visi = "bersama membangun puspamukti maju, sejahtera, teguh iman, dedikasi mandiri, bergerak transparan jadi inspirasi (sejati diri bertaji)";
+
+const misiList = [
+  "Mewujudkan Pemerintahan Desa Puspamukti Jujur menjungjung tinggi amanah berwibawa dengan akhlak mulia, tepat tanggal dalam pengambilan keputusan atas dasar musyawarah mufakat",
+  "Meningkatkan profesionalitas perangkat desa serta kelembagaan pemerintahan desa dengan azas kerja sama sebagai pengabdian masyakarat",
+  "Mewujudkan percepatan pembangunan sara dan prasanan umum sebgai penunjang kehidupan masyarakat",
+  "Mewujudkan pembangunan sarana dan prasarana desa yang memadai sebagai penunjang pelayanan publik tanpa diskriminasi dengan sistem administrasi satu atap (SATAP)",
+  "Menumbuhkembangkan perekonomian masyarakat melalui kearifan pertanian lokal, ekonomi kreatif, inovasi usaha bersama dan sektor agrowisata Desa Puspamukti sebagai usaha percepatan pembangunan masyarakat pedesaan dengan peningkatan sumber daya manusia sebagai pengelola dan pengguna manfaat sumber daya alam",
+  "Meningkatkan kepedulian dan penanganan optimal di bidang keagamaan, pendidikan kesehatan, ketahanan pangan, sosial budaya, dan keamanan sehingga menjadi masyarakat yang \"geunah, merenah, tumaninah\""
+];
+---
+
+<Layout title="Profil Desa Puspamukti">
+  <div class="container mx-auto px-4 max-w-screen-xl py-12 md:py-20 space-y-24">
+    
+    <!-- Hero Section -->
+    <div class="relative rounded-3xl overflow-hidden bg-primary/5 border shadow-sm">
+      <div class="absolute inset-0 bg-grid-black/[0.02] bg-[size:20px_20px]"></div>
+      <div class="relative px-6 py-16 md:py-24 text-center max-w-4xl mx-auto space-y-6">
+        <div class="inline-flex items-center rounded-full border px-3 py-1 text-sm font-semibold border-primary/20 bg-primary/10 text-primary mb-4">
+          Tentang Desa
+        </div>
+        <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground">
+          Mengenal Lebih Dekat Puspamukti
+        </h1>
+        <p class="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+          Desa agraris yang menjunjung tinggi nilai-nilai gotong royong, adat istiadat, serta berkomitmen menuju desa mandiri yang berdaya saing di era digital.
+        </p>
+      </div>
+    </div>
+
+    <!-- Sejarah Desa Section -->
+    <div class="flex flex-col lg:flex-row gap-12 lg:gap-16 items-center">
+      <div class="w-full lg:w-1/2 space-y-6">
+        <div class="space-y-2">
+          <h2 class="text-3xl md:text-4xl font-bold tracking-tight">Sejarah Desa</h2>
+          <div class="h-1.5 w-20 bg-primary rounded-full"></div>
+        </div>
+        <div class="prose prose-lg dark:prose-invert text-muted-foreground space-y-4">
+          <p>
+            <strong>Desa Puspamukti</strong> terletak di Kecamatan Cigalontang, Kabupaten Tasikmalaya, Jawa Barat. Memiliki akar sejarah panjang dari penggabungan eks-Desa Parung dan Maleer, desa ini resmi berdiri pada <strong>9 Maret 1983</strong> setelah dimekarkan dari Desa Pusparaja. 
+          </p>
+          <p>
+            Di bawah lereng perbukitan Galunggung yang asri, Puspamukti kini berkembang dari kawasan agraris menjadi <strong>Desa Mandiri</strong>, serta diakui secara nasional dengan masuk dalam jajaran <strong>100 Besar Anugerah Desa Wisata Indonesia (ADWI) 2024</strong>.
+          </p>
+        </div>
+        <div class="pt-4">
+          <button id="open-sejarah-modal" class="inline-flex items-center justify-center rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-semibold h-11 px-6 transition-colors shadow-md cursor-pointer">
+            Baca Sejarah Lengkap
+          </button>
+        </div>
+      </div>
+      <div class="w-full lg:w-1/2">
+        <div class="aspect-[4/3] w-full rounded-2xl overflow-hidden bg-muted border shadow-lg relative group">
+          <!-- Main Image -->
+          <img 
+            src="/sejarah.webp" 
+            alt="Foto Bersejarah Desa Puspamukti" 
+            class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-700 relative z-10"
+            id="sejarah-img"
+            onerror="this.style.display='none'; document.getElementById('sejarah-placeholder').style.display='flex';"
+          />
+          <!-- Fallback Placeholder (Will only show if sejarah.webp is missing) -->
+          <div 
+            id="sejarah-placeholder" 
+            class="absolute inset-0 bg-gradient-to-tr from-primary/10 to-secondary/30 flex-col items-center justify-center text-muted-foreground hidden"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-primary mb-2">
+              <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+              <circle cx="9" cy="9" r="2"/>
+              <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+            </svg>
+            <p class="font-bold text-foreground text-sm">Foto Bersejarah Desa</p>
+            <p class="text-xs mt-1">Letakkan berkas 'sejarah.webp' di folder public/</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Visi & Misi Section -->
+    <div class="bg-primary/5 rounded-3xl p-8 md:p-12 lg:p-16 border relative overflow-hidden">
+      <!-- Decorative Element -->
+      <div class="absolute top-0 right-0 -mt-12 -mr-12 w-40 h-40 bg-primary/10 rounded-full blur-3xl"></div>
+      
+      <div class="text-center space-y-3 mb-12 relative z-10">
+        <h2 class="text-3xl md:text-4xl font-bold tracking-tight">Visi & Misi</h2>
+        <p class="text-muted-foreground text-lg max-w-2xl mx-auto">Arah kebijakan dan tujuan pembangunan yang ingin dicapai oleh Pemerintah Desa Puspamukti.</p>
+      </div>
+
+      <div class="flex flex-col lg:flex-row gap-8 relative z-10">
+        <!-- Visi -->
+        <div class="w-full lg:w-5/12">
+          <div class="bg-primary text-primary-foreground rounded-2xl p-8 h-full shadow-lg flex flex-col justify-center text-center space-y-4">
+            <div class="mx-auto p-3 bg-primary-foreground/20 rounded-full w-fit">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l3-9 5 18 3-9h5"/></svg>
+            </div>
+            <h3 class="text-2xl font-bold">Visi Desa</h3>
+            <p class="text-lg font-medium italic leading-relaxed opacity-95">
+              "{visi}"
+            </p>
+          </div>
+        </div>
+
+        <!-- Misi -->
+        <div class="w-full lg:w-7/12">
+          <div class="bg-background rounded-2xl p-8 border shadow-sm h-full">
+            <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+              Misi Desa
+            </h3>
+            <ul class="space-y-4">
+              {misiList.map((misi, idx) => (
+                <li class="flex gap-4 items-start">
+                  <div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
+                    {idx + 1}
+                  </div>
+                  <p class="text-muted-foreground pt-1 text-sm leading-relaxed">
+                    {misi}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Portal Penjelajahan (Jelajahi Lebih Lanjut) -->
+    <div class="space-y-8 pb-10">
+      <div class="text-center space-y-2">
+        <h2 class="text-3xl font-bold tracking-tight">Jelajahi Lebih Lanjut</h2>
+        <p class="text-muted-foreground text-lg">Temukan informasi mendalam tentang statistik dan potensi yang kami miliki.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+        <!-- Card 1: Data & Statistik -->
+        <a href="/profil/data-statistik" class="group relative overflow-hidden rounded-3xl border bg-card p-8 transition-all hover:shadow-lg hover:border-primary/50 text-center flex flex-col items-center gap-4">
+          <div class="p-4 rounded-2xl bg-primary/10 text-primary transition-transform group-hover:scale-110 duration-300">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+          </div>
+          <div class="space-y-2">
+            <h3 class="text-2xl font-bold text-foreground">Data & Statistik</h3>
+            <p class="text-muted-foreground">Lihat data kependudukan, demografi, luas wilayah, dan statistik pendidikan desa.</p>
+          </div>
+          <div class="mt-4 flex items-center text-primary font-medium text-sm group-hover:underline underline-offset-4">
+            Lihat Data Statistik
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </div>
+        </a>
+
+        <!-- Card 2: Desa Wisata -->
+        <a href="/profil/desa-wisata" class="group relative overflow-hidden rounded-3xl border bg-card p-8 transition-all hover:shadow-lg hover:border-primary/50 text-center flex flex-col items-center gap-4">
+          <div class="p-4 rounded-2xl bg-primary/10 text-primary transition-transform group-hover:scale-110 duration-300">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
+          </div>
+          <div class="space-y-2">
+            <h3 class="text-2xl font-bold text-foreground">Potensi & Desa Wisata</h3>
+            <p class="text-muted-foreground">Jelajahi potensi alam, budaya, kuliner, dan daya tarik wisata unggulan kami.</p>
+          </div>
+          <div class="mt-4 flex items-center text-primary font-medium text-sm group-hover:underline underline-offset-4">
+            Eksplorasi Potensi
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </div>
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal Sejarah Lengkap -->
+  <div id="sejarah-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <!-- Backdrop overlay -->
+    <div id="close-modal-overlay" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+    
+    <!-- Modal Content -->
+    <div class="bg-card border w-full max-w-3xl rounded-3xl shadow-2xl relative z-10 max-h-[85vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between px-6 py-5 border-b">
+        <h3 class="text-xl md:text-2xl font-bold text-foreground">Sejarah Desa Puspamukti</h3>
+        <button id="close-sejarah-modal" class="text-muted-foreground hover:text-foreground p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      
+      <!-- Modal Body -->
+      <div class="p-6 overflow-y-auto space-y-6 text-muted-foreground leading-relaxed text-sm md:text-base">
+          <p>
+            <strong>Desa Puspamukti</strong>, yang terletak di Kecamatan Cigalontang, Kabupaten Tasikmalaya, Jawa Barat, memiliki sejarah panjang yang berakar dari dinamika wilayah pedesaan di lereng perbukitan Galunggung sejak masa pra-kemerdekaan.
+          </p>
+
+          <div class="h-px bg-border my-2"></div>
+
+          <h4 class="font-bold text-foreground text-lg flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">1</span>
+            Asal-Usul dan Akar Sejarah (Eks-Desa Parung)
+          </h4>
+          <p>
+            Jauh sebelum berdiri sebagai entitas mandiri, wilayah yang kini menjadi Desa Puspamukti dahulunya merupakan bagian dari <strong>Desa Parung</strong>.
+          </p>
+          <ul class="list-disc pl-8 space-y-2 text-sm">
+            <li><strong>Masa Pra-Kemerdekaan:</strong> Di kawasan ini telah berdiri dua desa bertetangga, yaitu <strong>Desa Parung</strong> di sebelah utara dan <strong>Desa Maleer</strong> di sebelah selatan.</li>
+            <li><strong>Penggabungan Wilayah:</strong> Pada masa kepemimpinan seorang kepala desa (kuwu) bernama <em>Kuwu Karma</em>, dilakukan penggabungan administrasi antara Desa Parung dan Desa Maleer menjadi satu kesatuan wilayah dengan pusat pemerintahan di Kampung Maleer.</li>
+          </ul>
+
+          <div class="h-px bg-border my-2"></div>
+
+          <h4 class="font-bold text-foreground text-lg flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">2</span>
+            Masa Desa Pusparaja
+          </h4>
+          <p>
+            Dalam perkembangannya, nama desa hasil penggabungan tersebut diubah menjadi <strong>Desa Pusparaja</strong>:
+          </p>
+          <ul class="list-disc pl-8 space-y-2 text-sm">
+            <li><strong>Puspa:</strong> Mengambil nama tokoh leluhur masyarakat setempat, yaitu <em>Puspa Binang</em>.</li>
+            <li><strong>Raja:</strong> Merujuk pada lokasi geografis wilayah yang berada di kaki bukit/Gunung Raja, yang diyakini masyarakat sebagai salah satu petilasan tokoh Kerajaan Galunggung.</li>
+          </ul>
+
+          <div class="h-px bg-border my-2"></div>
+
+          <h4 class="font-bold text-foreground text-lg flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">3</span>
+            Pemekaran dan Berdirinya Desa Puspamukti (1983)
+          </h4>
+          <p>
+            Seiring pertambahan jumlah penduduk serta luasnya rentang kendali pelayanan masyarakat, dilakukan pemekaran wilayah atas Desa Pusparaja:
+          </p>
+          <ul class="list-disc pl-8 space-y-2 text-sm">
+            <li><strong>Pemekaran Wilayah:</strong> Desa Pusparaja secara resmi dimekarkan menjadi dua desa:
+              <ol class="list-decimal pl-5 mt-1 space-y-1">
+                <li><strong>Wilayah Selatan:</strong> Tetap mempertahankan nama <strong>Desa Pusparaja</strong>.</li>
+                <li><strong>Wilayah Utara (eks-Desa Parung):</strong> Dimekarkan menjadi desa otonom baru bernama <strong>Desa Puspamukti</strong>.</li>
+              </ol>
+            </li>
+            <li><strong>Milangkala Desa:</strong> Desa Puspamukti resmi berdiri pada <strong>9 Maret 1983</strong>, tanggal yang hingga kini diperingati setiap tahun sebagai hari lahir (<em>Milangkala</em>) desa.</li>
+            <li><strong>Batas Alam:</strong> Pembagian kedua wilayah ini dipisahkan oleh batas fisik alami berupa aliran <strong>Sungai Cipangarangan</strong>.</li>
+          </ul>
+
+          <div class="h-px bg-border my-2"></div>
+
+          <h4 class="font-bold text-foreground text-lg flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">4</span>
+            Filosofi Nama "Puspamukti"
+          </h4>
+          <p>
+            Secara etimologi dan filosofis bahasa Sunda/Sansekerta:
+          </p>
+          <ul class="list-disc pl-8 space-y-2 text-sm">
+            <li><strong>Puspa</strong> bermakna bunga atau keindahan, sekaligus merawat keterikatan historis dengan leluhur pendahulu kawasan tersebut (<em>Puspa Binang</em>).</li>
+            <li><strong>Mukti</strong> berarti makmur, sejahtera, bahagia, atau berlimpah keberkahan hidup.</li>
+          </ul>
+          <p class="italic text-sm">
+            Nama <strong>Puspamukti</strong> menjadi doa dan cita-cita para pendiri desa agar masyarakatnya senantiasa hidup rukun, maju, dan makmur di atas tanah yang subur dan asri.
+          </p>
+
+          <div class="h-px bg-border my-2"></div>
+
+          <h4 class="font-bold text-foreground text-lg flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">5</span>
+            Perkembangan Terkini
+          </h4>
+          <p>
+            Saat ini, Desa Puspamukti terbagi ke dalam <strong>5 kedusunan, 9 RW, dan 19 RT</strong>.
+          </p>
+          <p class="text-sm">
+            Desa ini berkembang dari wilayah agraris berbasis perkebunan (kopi, cabai hibrida, dan persawahan terasering) menjadi salah satu desa yang berstatus <strong>Desa Mandiri</strong>. Selain itu, keindahan alam dan kearifan lokalnya mengantarkan Puspamukti meraih prestasi di tingkat nasional, salah satunya masuk dalam jajaran <strong>100 Besar Anugerah Desa Wisata Indonesia (ADWI) 2024</strong>.
+          </p>
+      </div>
+      
+      <!-- Modal Footer -->
+      <div class="px-6 py-4 border-t bg-muted/20 flex justify-end">
+        <button id="close-sejarah-btn" class="inline-flex items-center justify-center rounded-xl bg-secondary text-secondary-foreground hover:bg-secondary/80 text-sm font-semibold h-10 px-5 transition-colors cursor-pointer">
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    const modal = document.getElementById('sejarah-modal');
+    const openBtn = document.getElementById('open-sejarah-modal');
+    const closeBtn = document.getElementById('close-sejarah-modal');
+    const closeBtn2 = document.getElementById('close-sejarah-btn');
+    const overlay = document.getElementById('close-modal-overlay');
+
+    function openModal() {
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+      }
+    }
+
+    function closeModal() {
+      if (modal) {
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+      }
+    }
+
+    if (openBtn) openBtn.addEventListener('click', openModal);
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (closeBtn2) closeBtn2.addEventListener('click', closeModal);
+    if (overlay) overlay.addEventListener('click', closeModal);
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+    });
+  </script>
+</Layout>

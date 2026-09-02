@@ -1,0 +1,411 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Fetch only published news from Supabase
+const { data: dbBerita } = await supabase
+  .from('berita')
+  .select('*')
+  .eq('status', 'Terbit')
+  .order('created_at', { ascending: false });
+
+const beritaList = dbBerita || [];
+---
+
+<Layout title="Media & Informasi - Desa Puspamukti">
+  <div class="container mx-auto px-4 max-w-screen-xl py-12 md:py-20 space-y-12">
+    
+    <!-- Header Section -->
+    <div class="text-center max-w-3xl mx-auto space-y-4">
+      <div class="inline-flex items-center rounded-full border px-3 py-1 text-sm font-semibold border-primary/20 bg-primary/10 text-primary mb-2">
+        Kabar & Pengumuman
+      </div>
+      <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-foreground">Media & Informasi</h1>
+      <p class="text-lg text-muted-foreground leading-relaxed">
+        Liputan kegiatan terbaru, transparansi pembangunan, serta pengumuman resmi bagi seluruh warga Desa Puspamukti.
+      </p>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div class="bg-card border shadow-2xs rounded-2xl p-4 md:p-6 flex flex-col md:flex-row gap-4 items-center justify-between sticky top-20 z-30 backdrop-blur-md bg-card/90">
+      <div class="relative w-full md:w-80">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input 
+          type="search" 
+          id="media-search-input"
+          placeholder="Cari judul berita..." 
+          class="flex h-11 w-full rounded-xl border border-input bg-background pl-10 pr-4 text-xs sm:text-sm shadow-2xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+        />
+      </div>
+      <div class="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0" id="category-filters">
+        <button data-cat="all" class="cat-btn px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs sm:text-sm font-semibold whitespace-nowrap shadow-2xs cursor-pointer transition-all">Semua</button>
+        <button data-cat="Kegiatan Desa" class="cat-btn px-4 py-2 rounded-xl bg-secondary text-secondary-foreground text-xs sm:text-sm font-semibold whitespace-nowrap hover:bg-secondary/80 transition-colors cursor-pointer">Kegiatan Desa</button>
+        <button data-cat="Infrastruktur" class="cat-btn px-4 py-2 rounded-xl bg-secondary text-secondary-foreground text-xs sm:text-sm font-semibold whitespace-nowrap hover:bg-secondary/80 transition-colors cursor-pointer">Infrastruktur</button>
+        <button data-cat="Pemerintahan" class="cat-btn px-4 py-2 rounded-xl bg-secondary text-secondary-foreground text-xs sm:text-sm font-semibold whitespace-nowrap hover:bg-secondary/80 transition-colors cursor-pointer">Pemerintahan</button>
+        <button data-cat="Pengumuman" class="cat-btn px-4 py-2 rounded-xl bg-secondary text-secondary-foreground text-xs sm:text-sm font-semibold whitespace-nowrap hover:bg-secondary/80 transition-colors cursor-pointer">Pengumuman</button>
+      </div>
+    </div>
+
+    <!-- Empty State DB -->
+    {beritaList.length === 0 ? (
+      <div class="bg-card border rounded-3xl p-12 text-center max-w-xl mx-auto space-y-4 shadow-2xs">
+        <div class="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto text-muted-foreground">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
+        </div>
+        <h3 class="text-xl font-bold text-foreground">Belum Ada Berita</h3>
+        <p class="text-sm text-muted-foreground leading-relaxed">
+          Pemerintah desa belum mempublikasikan berita terbaru. Kunjungi halaman ini di lain waktu untuk kabar terbaru.
+        </p>
+      </div>
+    ) : (
+      <div class="space-y-12">
+        <!-- Search Not Found Message (Hidden by default) -->
+        <div id="no-search-results" class="hidden bg-card border rounded-3xl p-12 text-center max-w-xl mx-auto space-y-4 shadow-2xs">
+          <div class="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto text-muted-foreground">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </div>
+          <h3 class="text-xl font-bold text-foreground">Berita Tidak Ditemukan</h3>
+          <p class="text-sm text-muted-foreground leading-relaxed">
+            Tidak ada kabar atau pengumuman yang sesuai dengan kata kunci pencarian Anda.
+          </p>
+          <button id="reset-filter-btn" class="inline-flex items-center justify-center rounded-xl bg-primary text-primary-foreground text-xs font-bold h-9 px-4 cursor-pointer">
+            Tampilkan Semua Berita
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="berita-grid">
+          {beritaList.map((item, index) => (
+            <article 
+              class="berita-card group flex flex-col gap-4 cursor-pointer hover:opacity-95 transition-all bg-card border rounded-3xl p-4 shadow-2xs hover:shadow-md hover:border-primary/40"
+              data-index={index}
+              data-judul={item.judul}
+              data-kategori={item.kategori}
+              data-tanggal={item.tanggal}
+              data-isi={item.isi}
+              data-gambar={item.gambar_url || ''}
+            >
+              <div class="overflow-hidden rounded-2xl aspect-[4/3] bg-muted relative border shadow-2xs">
+                {item.gambar_url ? (
+                  <img 
+                    src={item.gambar_url} 
+                    alt={item.judul} 
+                    width="400"
+                    height="300"
+                    loading="lazy"
+                    decoding="async"
+                    class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-500"
+                  />
+                ) : (
+                  <div class="absolute inset-0 bg-muted flex items-center justify-center text-muted-foreground group-hover:scale-105 transition-transform duration-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                  </div>
+                )}
+              </div>
+              <div class="flex-1 flex flex-col justify-between space-y-2 p-2">
+                <div class="space-y-2">
+                  <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center rounded-md border px-2.5 py-0.5 text-[10px] font-bold bg-primary/10 text-primary uppercase tracking-wider">{item.kategori}</span>
+                    <span class="w-1 h-1 bg-muted-foreground/30 rounded-full"></span>
+                    <span class="text-xs text-muted-foreground">{item.tanggal}</span>
+                  </div>
+                  <h3 class="text-lg font-bold group-hover:text-primary transition-colors line-clamp-2 leading-snug">{item.judul}</h3>
+                  <p class="text-muted-foreground text-xs sm:text-sm line-clamp-3 leading-relaxed font-normal">{item.isi}</p>
+                </div>
+                <div class="pt-2 flex items-center text-primary text-xs font-bold gap-1 group-hover:underline">
+                  <span>Baca Selengkapnya</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div 
+          id="pagination-container" 
+          class="flex items-center justify-center gap-1.5 pt-8 border-t border-border"
+        >
+          <button 
+            id="prev-page-btn" 
+            class="inline-flex items-center justify-center rounded-xl text-sm font-semibold border bg-background hover:bg-muted text-muted-foreground hover:text-foreground h-10 w-10 transition-colors cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+            aria-label="Halaman Sebelumnya"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          </button>
+
+          <div id="page-numbers-wrapper" class="flex items-center gap-1.5"></div>
+
+          <button 
+            id="next-page-btn" 
+            class="inline-flex items-center justify-center rounded-xl text-sm font-semibold border bg-background hover:bg-muted text-muted-foreground hover:text-foreground h-10 w-10 transition-colors cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+            aria-label="Halaman Selanjutnya"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+        </div>
+      </div>
+    )}
+
+  </div>
+
+  <!-- Detail Modal -->
+  <div id="detail-modal" class="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-card border w-full max-w-3xl rounded-3xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="px-6 py-5 border-b flex justify-between items-center bg-muted/20">
+        <span id="detail-kategori" class="text-xs font-bold text-primary uppercase tracking-wider">Kategori</span>
+        <button id="close-modal-btn" class="p-1.5 rounded-xl hover:bg-muted text-muted-foreground transition-colors" aria-label="Tutup">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="p-6 overflow-y-auto space-y-6 flex-1">
+        <div class="space-y-2">
+          <h2 id="detail-judul" class="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight leading-snug">Judul Berita</h2>
+          <p id="detail-tanggal" class="text-xs text-muted-foreground">Tanggal Publikasi</p>
+        </div>
+
+        <div id="detail-image-container" class="rounded-2xl overflow-hidden border shadow-2xs max-h-[350px] bg-muted relative hidden">
+          <img id="detail-gambar" src="" alt="Gambar Sampul" class="w-full h-full object-cover" />
+        </div>
+
+        <div id="detail-isi" class="text-foreground text-sm leading-relaxed whitespace-pre-line font-normal">
+          Isi Konten...
+        </div>
+      </div>
+      
+      <div class="px-6 py-4 border-t bg-muted/10 flex justify-end">
+        <button id="close-modal-bottom-btn" class="inline-flex items-center justify-center rounded-xl bg-secondary text-secondary-foreground hover:bg-secondary/80 text-xs font-bold h-10 px-6 cursor-pointer transition-colors">
+          Tutup Berita
+        </button>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  // --- CLIENT SIDE FILTERING & PAGINATION LOGIC ---
+  const ITEMS_PER_PAGE = 9;
+  let currentPage = 1;
+  const cards = Array.from(document.querySelectorAll('.berita-card')) as HTMLElement[];
+  let filteredCards = [...cards];
+
+  const searchInput = document.getElementById('media-search-input') as HTMLInputElement;
+  const catButtons = document.querySelectorAll('.cat-btn');
+  const noResults = document.getElementById('no-search-results');
+  const resetBtn = document.getElementById('reset-filter-btn');
+
+  const prevBtn = document.getElementById('prev-page-btn') as HTMLButtonElement;
+  const nextBtn = document.getElementById('next-page-btn') as HTMLButtonElement;
+  const numbersWrapper = document.getElementById('page-numbers-wrapper');
+  const paginationContainer = document.getElementById('pagination-container');
+
+  let currentCategory = 'all';
+  let currentSearch = '';
+
+  const applyFilters = () => {
+    filteredCards = cards.filter((card) => {
+      const title = (card.getAttribute('data-judul') || '').toLowerCase();
+      const content = (card.getAttribute('data-isi') || '').toLowerCase();
+      const cat = card.getAttribute('data-kategori') || '';
+
+      const matchesSearch = currentSearch === '' || title.includes(currentSearch) || content.includes(currentSearch);
+      const matchesCategory = currentCategory === 'all' || cat === currentCategory;
+
+      return matchesSearch && matchesCategory;
+    });
+
+    currentPage = 1;
+    renderPage();
+  };
+
+  const renderPage = () => {
+    const totalItems = filteredCards.length;
+    const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
+
+    // Hide all cards first
+    cards.forEach((card) => {
+      card.style.display = 'none';
+    });
+
+    if (totalItems === 0) {
+      if (noResults) noResults.classList.remove('hidden');
+      if (paginationContainer) paginationContainer.style.display = 'none';
+      return;
+    } else {
+      if (noResults) noResults.classList.add('hidden');
+    }
+
+    // Show only active items for current page
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    
+    for (let i = start; i < end && i < totalItems; i++) {
+      filteredCards[i].style.display = 'flex';
+    }
+
+    // Pagination Visibility
+    if (totalItems <= ITEMS_PER_PAGE) {
+      if (paginationContainer) paginationContainer.style.display = 'none';
+    } else {
+      if (paginationContainer) paginationContainer.style.display = 'flex';
+    }
+
+    // Update numbers wrapper
+    if (numbersWrapper) {
+      numbersWrapper.innerHTML = '';
+      for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement('button');
+        btn.innerText = i.toString();
+        btn.className = `inline-flex items-center justify-center rounded-xl text-sm font-bold h-10 w-10 cursor-pointer transition-colors ${
+          i === currentPage 
+            ? 'bg-primary text-primary-foreground shadow-2xs' 
+            : 'border bg-background hover:bg-muted text-muted-foreground hover:text-foreground'
+        }`;
+        
+        btn.addEventListener('click', () => {
+          currentPage = i;
+          renderPage();
+          window.scrollTo({ top: 300, behavior: 'smooth' });
+        });
+        
+        numbersWrapper.appendChild(btn);
+      }
+    }
+
+    if (prevBtn) prevBtn.disabled = currentPage === 1;
+    if (nextBtn) nextBtn.disabled = currentPage === totalPages;
+  };
+
+  // Search input handler
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      currentSearch = (e.target as HTMLInputElement).value.trim().toLowerCase();
+      applyFilters();
+    });
+  }
+
+  // Category buttons handler
+  catButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      catButtons.forEach(b => {
+        b.className = 'cat-btn px-4 py-2 rounded-xl bg-secondary text-secondary-foreground text-xs sm:text-sm font-semibold whitespace-nowrap hover:bg-secondary/80 transition-colors cursor-pointer';
+      });
+      btn.className = 'cat-btn px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs sm:text-sm font-semibold whitespace-nowrap shadow-2xs cursor-pointer transition-all';
+      
+      currentCategory = btn.getAttribute('data-cat') || 'all';
+      applyFilters();
+    });
+  });
+
+  // Reset filter button
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      if (searchInput) searchInput.value = '';
+      currentSearch = '';
+      currentCategory = 'all';
+      catButtons.forEach((b, idx) => {
+        if (idx === 0) b.className = 'cat-btn px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs sm:text-sm font-semibold whitespace-nowrap shadow-2xs cursor-pointer transition-all';
+        else b.className = 'cat-btn px-4 py-2 rounded-xl bg-secondary text-secondary-foreground text-xs sm:text-sm font-semibold whitespace-nowrap hover:bg-secondary/80 transition-colors cursor-pointer';
+      });
+      applyFilters();
+    });
+  }
+
+  // Check URL query parameters (e.g., from Navbar search)
+  const urlParams = new URLSearchParams(window.location.search);
+  const qParam = urlParams.get('q');
+  if (qParam && searchInput) {
+    searchInput.value = qParam;
+    currentSearch = qParam.trim().toLowerCase();
+  }
+
+  // Bind Next / Prev buttons
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderPage();
+        window.scrollTo({ top: 300, behavior: 'smooth' });
+      }
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      const totalPages = Math.ceil(filteredCards.length / ITEMS_PER_PAGE);
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderPage();
+        window.scrollTo({ top: 300, behavior: 'smooth' });
+      }
+    });
+  }
+
+  // Initial load
+  applyFilters();
+
+  // --- DETAIL MODAL LOGIC ---
+  const modal = document.getElementById('detail-modal');
+  const closeBtnX = document.getElementById('close-modal-btn');
+  const closeBtnBottom = document.getElementById('close-modal-bottom-btn');
+  
+  const detailKategori = document.getElementById('detail-kategori');
+  const detailJudul = document.getElementById('detail-judul');
+  const detailTanggal = document.getElementById('detail-tanggal');
+  const detailImgContainer = document.getElementById('detail-image-container');
+  const detailGambar = document.getElementById('detail-gambar') as HTMLImageElement;
+  const detailIsi = document.getElementById('detail-isi');
+
+  const openDetail = (judul: string, kategori: string, tanggal: string, gambar: string, isi: string) => {
+    if (!modal) return;
+    if (detailJudul) detailJudul.innerText = judul;
+    if (detailKategori) detailKategori.innerText = kategori;
+    if (detailTanggal) detailTanggal.innerText = tanggal;
+    if (detailIsi) detailIsi.innerText = isi;
+
+    if (gambar && detailGambar && detailImgContainer) {
+      detailGambar.src = gambar;
+      detailImgContainer.classList.remove('hidden');
+      detailImgContainer.classList.add('block');
+    } else if (detailImgContainer) {
+      detailImgContainer.classList.remove('block');
+      detailImgContainer.classList.add('hidden');
+    }
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeDetail = () => {
+    if (!modal) return;
+    modal.classList.remove('flex');
+    modal.classList.add('hidden');
+    document.body.style.overflow = 'unset';
+  };
+
+  cards.forEach((card) => {
+    card.addEventListener('click', (e) => {
+      const el = e.currentTarget as HTMLElement;
+      const judul = el.getAttribute('data-judul') || "";
+      const kategori = el.getAttribute('data-kategori') || "";
+      const tanggal = el.getAttribute('data-tanggal') || "";
+      const gambar = el.getAttribute('data-gambar') || "";
+      const isi = el.getAttribute('data-isi') || "";
+
+      openDetail(judul, kategori, tanggal, gambar, isi);
+    });
+  });
+
+  if (closeBtnX) closeBtnX.addEventListener('click', closeDetail);
+  if (closeBtnBottom) closeBtnBottom.addEventListener('click', closeDetail);
+
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeDetail();
+    });
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeDetail();
+  });
+</script>

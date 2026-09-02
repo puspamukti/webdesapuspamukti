@@ -1,0 +1,852 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Fetch alert status from Supabase
+const { data: dbStatus } = await supabase
+  .from('bencana_status')
+  .select('*')
+  .eq('id', 1)
+  .single();
+
+// Fetch hazard points from Supabase
+const { data: dbTitikRawan } = await supabase
+  .from('bencana_titik_rawan')
+  .select('*')
+  .order('created_at', { ascending: true });
+
+// Fetch emergency contacts from Supabase
+const { data: dbKontak } = await supabase
+  .from('bencana_kontak')
+  .select('*')
+  .order('created_at', { ascending: true });
+
+// Fallback status
+const status = dbStatus || {
+  level: "aman",
+  title: "Kondisi Desa Aman & Terkendali",
+  description: "Berdasarkan pantauan posko mitigasi, tidak ada potensi cuaca ekstrem atau ancaman pergeseran tanah aktif hari ini. Tetap waspada terhadap perubahan cuaca dadakan."
+};
+
+const titikRawan = dbTitikRawan || [];
+const kontakDarurat = dbKontak || [];
+---
+
+<AdminLayout title="Kelola Siaga Bencana - Panel Admin">
+  <div class="space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight text-foreground">Siaga Bencana</h1>
+        <p class="text-muted-foreground mt-1">Kelola status kedaruratan desa, pemetaan wilayah rawan bencana, dan kontak tanggap darurat.</p>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in">
+      <!-- Kolom Kiri: Status & Titik Rawan -->
+      <div class="lg:col-span-2 space-y-6">
+        
+        <!-- Status Aktif Saat Ini -->
+        <div class="bg-card border rounded-3xl p-6 shadow-sm flex items-center justify-between gap-4">
+          <div class="space-y-1">
+            <span class="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Status Siaga Aktif Saat Ini</span>
+            <h4 class="font-bold text-sm sm:text-base text-foreground">{status?.title || 'Belum Ada Status'}</h4>
+            <p class="text-xs text-muted-foreground leading-relaxed">{status?.description || '-'}</p>
+          </div>
+          <span class={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shrink-0 border ${
+            status?.level === 'awas' ? 'bg-red-500/10 text-red-600 border-red-500/20' :
+            status?.level === 'siaga' ? 'bg-orange-500/10 text-orange-600 border-orange-500/20' :
+            status?.level === 'waspada' ? 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20' :
+            'bg-green-500/10 text-green-600 border-green-500/20'
+          }`}>
+            {status?.level || 'Belum Diatur'}
+          </span>
+        </div>
+
+        <!-- Status Siaga Config -->
+        <form id="status-form" class="bg-card border rounded-3xl p-6 sm:p-8 shadow-sm space-y-6" novalidate>
+          <div class="border-b pb-4">
+            <h3 class="font-bold text-lg text-foreground">Formulir Pembaruan Status Siaga</h3>
+            <p class="text-xs text-muted-foreground mt-0.5">Isi formulir ini lalu klik tombol simpan untuk memperbarui Status Aktif di atas.</p>
+          </div>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div class="space-y-1.5 text-left">
+              <label for="status-level" class="text-xs font-bold text-foreground uppercase tracking-wider">Level Kedaruratan</label>
+              <select id="status-level" class="flex h-12 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer shadow-2xs" required>
+                <option value="" disabled selected>-- Pilih Level Kedaruratan --</option>
+                <option value="aman">Aman (Hijau)</option>
+                <option value="waspada">Waspada (Kuning)</option>
+                <option value="siaga">Siaga (Oranye)</option>
+                <option value="awas">Awas (Merah)</option>
+              </select>
+              <p id="status-level-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                <span>Pilih salah satu level kedaruratan.</span>
+              </p>
+            </div>
+            
+            <div class="space-y-1.5 text-left">
+              <label for="status-title" class="text-xs font-bold text-foreground uppercase tracking-wider">Judul Status Kedaruratan</label>
+              <input 
+                type="text" 
+                id="status-title" 
+                value="" 
+                placeholder="Contoh: Kondisi Desa Aman & Terkendali"
+                class="flex h-12 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs transition-colors"
+                required
+              />
+              <p id="status-title-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                <span>Judul status wajib diisi (minimal 5 huruf).</span>
+              </p>
+            </div>
+            
+            <div class="sm:col-span-2 space-y-1.5 text-left">
+              <label for="status-desc" class="text-xs font-bold text-foreground uppercase tracking-wider">Keterangan / Himbauan Kedaruratan</label>
+              <textarea 
+                id="status-desc" 
+                rows="3" 
+                placeholder="Masukkan pesan himbauan kesiapsiagaan bagi warga..."
+                class="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary resize-none shadow-2xs transition-colors"
+                required
+              ></textarea>
+              <p id="status-desc-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                <span>Pesan himbauan wajib diisi (minimal 10 huruf).</span>
+              </p>
+            </div>
+
+            <!-- Bottom Save Button for Senior UX -->
+            <div class="sm:col-span-2 pt-4 border-t flex justify-end">
+              <button 
+                type="submit" 
+                id="save-status-btn-bottom"
+                class="inline-flex items-center justify-center rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold h-12 px-8 shadow-md hover:shadow-lg transition-all cursor-pointer"
+              >
+                Simpan & Rilis Status Siaga Baru
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Titik Rawan Table -->
+        <div class="bg-card border rounded-3xl shadow-sm overflow-hidden">
+          <div class="px-6 py-5 border-b flex items-center justify-between bg-muted/20">
+            <h3 class="font-bold text-lg text-foreground">Titik Rawan Bencana</h3>
+            <button 
+              id="add-titik-btn"
+              class="text-primary hover:underline text-xs font-bold flex items-center gap-1 cursor-pointer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+              Tambah Titik
+            </button>
+          </div>
+          
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="bg-muted/50 text-muted-foreground font-semibold border-b">
+                <tr>
+                  <th class="px-6 py-4">Wilayah Dusun</th>
+                  <th class="px-6 py-4">Jenis Kerawanan</th>
+                  <th class="px-6 py-4">Tingkat Risiko</th>
+                  <th class="px-6 py-4 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y" id="titik-table-body">
+                {titikRawan.length === 0 ? (
+                  <tr>
+                    <td colspan="4" class="px-6 py-8 text-center text-muted-foreground">
+                      Belum ada pemetaan titik rawan bencana. Silakan tambah data baru.
+                    </td>
+                  </tr>
+                ) : (
+                  titikRawan.map((item) => (
+                    <tr class="hover:bg-muted/30 transition-colors">
+                      <td class="px-6 py-4 font-bold text-foreground">{item.dusun}</td>
+                      <td class="px-6 py-4 text-muted-foreground">{item.jenis}</td>
+                      <td class="px-6 py-4">
+                        <span class={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
+                          item.tingkat === 'Tinggi' ? 'bg-destructive/10 text-destructive' : 
+                          item.tingkat === 'Sedang' ? 'bg-amber-500/10 text-amber-600' : 
+                          'bg-green-500/10 text-green-600'
+                        }`}>
+                          {item.tingkat}
+                        </span>
+                      </td>
+                      <td class="px-6 py-4 text-right whitespace-nowrap">
+                        <button 
+                          class="edit-titik-btn text-primary hover:underline text-xs font-bold mr-3 cursor-pointer"
+                          data-id={item.id}
+                          data-dusun={item.dusun}
+                          data-jenis={item.jenis}
+                          data-tingkat={item.tingkat}
+                          data-keterangan={item.keterangan}
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          class="delete-titik-btn text-destructive hover:underline text-xs font-bold cursor-pointer"
+                          data-id={item.id}
+                          data-dusun={item.dusun}
+                        >
+                          Hapus
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Kolom Kanan: Kontak Darurat -->
+      <div class="space-y-6">
+        
+        <!-- Emergency Contacts Manager -->
+        <div class="bg-card border rounded-3xl shadow-sm overflow-hidden flex flex-col h-full">
+          <div class="px-6 py-5 border-b bg-muted/20 flex justify-between items-center">
+            <h3 class="font-bold text-lg text-foreground">Kontak Darurat</h3>
+            <button 
+              id="add-kontak-btn"
+              class="text-primary hover:underline text-xs font-bold flex items-center gap-0.5 cursor-pointer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+              Tambah Kontak
+            </button>
+          </div>
+          
+          <div class="p-6 divide-y space-y-4" id="kontak-list-body">
+            {kontakDarurat.length === 0 ? (
+              <p class="text-sm text-muted-foreground text-center py-8">
+                Belum ada kontak darurat yang didaftarkan.
+              </p>
+            ) : (
+              kontakDarurat.map((item) => (
+                <div class="pt-4 first:pt-0 space-y-2">
+                  <div class="flex justify-between items-start gap-4">
+                    <div>
+                      <h4 class="font-bold text-sm text-foreground">{item.nama}</h4>
+                      <p class="text-xs text-destructive font-black tracking-wide mt-0.5">{item.nomor}</p>
+                    </div>
+                    <div class="flex gap-2 shrink-0">
+                      <button 
+                        class="edit-kontak-btn text-primary hover:bg-primary/10 p-1 rounded cursor-pointer" 
+                        data-id={item.id}
+                        data-nama={item.nama}
+                        data-nomor={item.nomor}
+                        data-deskripsi={item.deskripsi}
+                        title="Edit"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                      </button>
+                      <button 
+                        class="delete-kontak-btn text-destructive hover:bg-destructive/10 p-1 rounded cursor-pointer" 
+                        data-id={item.id}
+                        data-nama={item.nama}
+                        title="Hapus"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18 M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6 M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                  <p class="text-[10px] text-muted-foreground leading-normal">{item.deskripsi}</p>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal 1: Form Titik Rawan -->
+  <div id="titik-modal" class="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-card border w-full max-w-md rounded-3xl shadow-xl overflow-hidden flex flex-col">
+      <div class="px-6 py-5 border-b flex justify-between items-center bg-muted/20">
+        <h3 id="titik-modal-title" class="font-bold text-lg text-foreground">Tambah Titik Rawan</h3>
+        <button id="close-titik-modal" class="p-1.5 rounded-lg hover:bg-muted text-muted-foreground">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      
+      <form id="titik-form" class="p-6 space-y-4" novalidate>
+        <input type="hidden" id="titik-id" />
+        
+        <div class="space-y-1.5 text-left">
+          <label for="titik-dusun" class="text-xs font-bold text-foreground uppercase tracking-wider">Wilayah / Dusun</label>
+          <input 
+            type="text" 
+            id="titik-dusun" 
+            placeholder="Contoh: Dusun 2 (Ngenol)" 
+            class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs transition-colors"
+            required
+          />
+          <p id="titik-dusun-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+            <span>Wilayah dusun wajib diisi (minimal 3 huruf).</span>
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1.5 text-left">
+            <label for="titik-jenis" class="text-xs font-bold text-foreground uppercase tracking-wider">Jenis Kerawanan</label>
+            <input 
+              type="text" 
+              id="titik-jenis" 
+              placeholder="Contoh: Tanah Longsor" 
+              class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs transition-colors"
+              required
+            />
+            <p id="titik-jenis-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+              <span>Jenis kerawanan wajib diisi.</span>
+            </p>
+          </div>
+
+          <div class="space-y-1.5 text-left">
+            <label for="titik-tingkat" class="text-xs font-bold text-foreground uppercase tracking-wider">Tingkat Risiko</label>
+            <select id="titik-tingkat" class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer shadow-2xs" required>
+              <option value="" disabled selected>-- Pilih Tingkat Risiko --</option>
+              <option value="Tinggi">Tinggi</option>
+              <option value="Sedang">Sedang</option>
+              <option value="Rendah">Rendah</option>
+            </select>
+            <p id="titik-tingkat-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+              <span>Pilih tingkat risiko.</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="space-y-1.5 text-left">
+          <label for="titik-keterangan" class="text-xs font-bold text-foreground uppercase tracking-wider">Keterangan Wilayah</label>
+          <textarea 
+            id="titik-keterangan" 
+            rows="3" 
+            placeholder="Contoh: Himbauan waspada saat hujan deras lebih dari 3 jam berturut-turut..."
+            class="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary resize-none shadow-2xs transition-colors"
+            required
+          ></textarea>
+          <p id="titik-keterangan-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+            <span>Keterangan wilayah wajib diisi (minimal 5 huruf).</span>
+          </p>
+        </div>
+
+        <div class="pt-4 border-t flex justify-end gap-3">
+          <button type="button" id="cancel-titik-btn" class="inline-flex items-center justify-center rounded-xl border border-input bg-background hover:bg-accent text-sm font-bold h-11 px-4 cursor-pointer transition-colors">Batal</button>
+          <button type="submit" id="submit-titik-btn" class="inline-flex items-center justify-center rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold h-11 px-6 shadow-md hover:shadow-lg cursor-pointer transition-all">Simpan Titik</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Form Kontak Darurat -->
+  <div id="kontak-modal" class="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-card border w-full max-w-md rounded-3xl shadow-xl overflow-hidden flex flex-col">
+      <div class="px-6 py-5 border-b flex justify-between items-center bg-muted/20">
+        <h3 id="kontak-modal-title" class="font-bold text-lg text-foreground">Tambah Kontak Darurat</h3>
+        <button id="close-kontak-modal" class="p-1.5 rounded-lg hover:bg-muted text-muted-foreground">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      
+      <form id="kontak-form" class="p-6 space-y-4" novalidate>
+        <input type="hidden" id="kontak-id" />
+        
+        <div class="space-y-1.5 text-left">
+          <label for="kontak-nama" class="text-xs font-bold text-foreground uppercase tracking-wider">Nama Lembaga / Posko</label>
+          <input 
+            type="text" 
+            id="kontak-nama" 
+            placeholder="Contoh: Posko Siaga Bencana Desa" 
+            class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs transition-colors"
+            required
+          />
+          <p id="kontak-nama-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+            <span>Nama lembaga wajib diisi (minimal 3 huruf).</span>
+          </p>
+        </div>
+
+        <div class="space-y-1.5 text-left">
+          <label for="kontak-nomor" class="text-xs font-bold text-foreground uppercase tracking-wider">Nomor Telepon Darurat</label>
+          <input 
+            type="text" 
+            id="kontak-nomor" 
+            placeholder="Contoh: 0812-3456-7890 / (0265) 545678" 
+            class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs transition-colors"
+            required
+          />
+          <p id="kontak-nomor-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+            <span>Nomor kontak wajib diisi.</span>
+          </p>
+        </div>
+
+        <div class="space-y-1.5 text-left">
+          <label for="kontak-deskripsi" class="text-xs font-bold text-foreground uppercase tracking-wider">Deskripsi Operasional / Layanan</label>
+          <input 
+            type="text" 
+            id="kontak-deskripsi" 
+            placeholder="Contoh: Siaga 24 Jam di Kantor Desa Puspamukti" 
+            class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs transition-colors"
+            required
+          />
+          <p id="kontak-deskripsi-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+            <span>Deskripsi operasional wajib diisi.</span>
+          </p>
+        </div>
+
+        <div class="pt-4 border-t flex justify-end gap-3">
+          <button type="button" id="cancel-kontak-btn" class="inline-flex items-center justify-center rounded-xl border border-input bg-background hover:bg-accent text-sm font-bold h-11 px-4 cursor-pointer transition-colors">Batal</button>
+          <button type="submit" id="submit-kontak-btn" class="inline-flex items-center justify-center rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold h-11 px-6 shadow-md hover:shadow-lg cursor-pointer transition-all">Simpan Kontak</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { supabase } from '../../lib/supabase';
+
+  // --- 1. STATUS SIAGA SUBMIT ---
+  const statusForm = document.getElementById('status-form');
+  const saveStatusBtn = document.getElementById('save-status-btn');
+  const saveStatusBtnBottom = document.getElementById('save-status-btn-bottom');
+  const selectLevel = document.getElementById('status-level') as HTMLSelectElement;
+  const inputStatusTitle = document.getElementById('status-title') as HTMLInputElement;
+  const inputStatusDesc = document.getElementById('status-desc') as HTMLTextAreaElement;
+
+  const statusLevelError = document.getElementById('status-level-error');
+  const statusTitleError = document.getElementById('status-title-error');
+  const statusDescError = document.getElementById('status-desc-error');
+
+  function validateStatusForm(): boolean {
+    let valid = true;
+    if (!selectLevel.value) {
+      selectLevel.classList.add('border-destructive', 'focus-visible:ring-destructive');
+      selectLevel.classList.remove('border-input', 'focus-visible:ring-primary');
+      statusLevelError?.classList.remove('hidden');
+      valid = false;
+    } else {
+      selectLevel.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+      selectLevel.classList.add('border-input', 'focus-visible:ring-primary');
+      statusLevelError?.classList.add('hidden');
+    }
+
+    if (inputStatusTitle.value.trim().length < 5) {
+      inputStatusTitle.classList.add('border-destructive', 'focus-visible:ring-destructive');
+      inputStatusTitle.classList.remove('border-input', 'focus-visible:ring-primary');
+      statusTitleError?.classList.remove('hidden');
+      valid = false;
+    } else {
+      inputStatusTitle.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+      inputStatusTitle.classList.add('border-input', 'focus-visible:ring-primary');
+      statusTitleError?.classList.add('hidden');
+    }
+
+    if (inputStatusDesc.value.trim().length < 10) {
+      inputStatusDesc.classList.add('border-destructive', 'focus-visible:ring-destructive');
+      inputStatusDesc.classList.remove('border-input', 'focus-visible:ring-primary');
+      statusDescError?.classList.remove('hidden');
+      valid = false;
+    } else {
+      inputStatusDesc.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+      inputStatusDesc.classList.add('border-input', 'focus-visible:ring-primary');
+      statusDescError?.classList.add('hidden');
+    }
+
+    return valid;
+  }
+
+  selectLevel?.addEventListener('change', () => { if (!statusLevelError?.classList.contains('hidden')) validateStatusForm(); });
+  inputStatusTitle?.addEventListener('input', () => { if (!statusTitleError?.classList.contains('hidden')) validateStatusForm(); });
+  inputStatusDesc?.addEventListener('input', () => { if (!statusDescError?.classList.contains('hidden')) validateStatusForm(); });
+
+  if (statusForm) {
+    statusForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!validateStatusForm()) return;
+      
+      const level = selectLevel.value;
+      const title = inputStatusTitle.value.trim();
+      const description = inputStatusDesc.value.trim();
+
+      if (saveStatusBtn) {
+        saveStatusBtn.innerText = "Menyimpan...";
+        saveStatusBtn.setAttribute('disabled', 'true');
+      }
+      if (saveStatusBtnBottom) {
+        saveStatusBtnBottom.innerText = "Menyimpan...";
+        saveStatusBtnBottom.setAttribute('disabled', 'true');
+      }
+
+      // Upsert record at ID 1
+      const { error } = await supabase
+        .from('bencana_status')
+        .upsert({
+          id: 1,
+          level,
+          title,
+          description,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) {
+        alert("Gagal memperbarui status: " + error.message);
+      } else {
+        window.location.reload();
+      }
+
+      if (saveStatusBtn) {
+        saveStatusBtn.innerText = "Simpan Status";
+        saveStatusBtn.removeAttribute('disabled');
+      }
+      if (saveStatusBtnBottom) {
+        saveStatusBtnBottom.innerText = "Simpan & Rilis Status Siaga Baru";
+        saveStatusBtnBottom.removeAttribute('disabled');
+      }
+    });
+  }
+
+  // --- 2. MANAGING TITIK RAWAN ---
+  const titikModal = document.getElementById('titik-modal');
+  const titikForm = document.getElementById('titik-form') as HTMLFormElement;
+  const titikModalTitle = document.getElementById('titik-modal-title');
+  const inputTitikId = document.getElementById('titik-id') as HTMLInputElement;
+  const inputTitikDusun = document.getElementById('titik-dusun') as HTMLInputElement;
+  const inputTitikJenis = document.getElementById('titik-jenis') as HTMLInputElement;
+  const selectTitikTingkat = document.getElementById('titik-tingkat') as HTMLSelectElement;
+  const inputTitikKeterangan = document.getElementById('titik-keterangan') as HTMLTextAreaElement;
+
+  const titikDusunError = document.getElementById('titik-dusun-error');
+  const titikJenisError = document.getElementById('titik-jenis-error');
+  const titikTingkatError = document.getElementById('titik-tingkat-error');
+  const titikKetError = document.getElementById('titik-keterangan-error');
+
+  function validateTitikForm(): boolean {
+    let valid = true;
+    if (inputTitikDusun.value.trim().length < 3) {
+      inputTitikDusun.classList.add('border-destructive', 'focus-visible:ring-destructive');
+      inputTitikDusun.classList.remove('border-input', 'focus-visible:ring-primary');
+      titikDusunError?.classList.remove('hidden');
+      valid = false;
+    } else {
+      inputTitikDusun.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+      inputTitikDusun.classList.add('border-input', 'focus-visible:ring-primary');
+      titikDusunError?.classList.add('hidden');
+    }
+
+    if (!inputTitikJenis.value.trim()) {
+      inputTitikJenis.classList.add('border-destructive', 'focus-visible:ring-destructive');
+      inputTitikJenis.classList.remove('border-input', 'focus-visible:ring-primary');
+      titikJenisError?.classList.remove('hidden');
+      valid = false;
+    } else {
+      inputTitikJenis.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+      inputTitikJenis.classList.add('border-input', 'focus-visible:ring-primary');
+      titikJenisError?.classList.add('hidden');
+    }
+
+    if (!selectTitikTingkat.value) {
+      selectTitikTingkat.classList.add('border-destructive', 'focus-visible:ring-destructive');
+      selectTitikTingkat.classList.remove('border-input', 'focus-visible:ring-primary');
+      titikTingkatError?.classList.remove('hidden');
+      valid = false;
+    } else {
+      selectTitikTingkat.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+      selectTitikTingkat.classList.add('border-input', 'focus-visible:ring-primary');
+      titikTingkatError?.classList.add('hidden');
+    }
+
+    if (inputTitikKeterangan.value.trim().length < 5) {
+      inputTitikKeterangan.classList.add('border-destructive', 'focus-visible:ring-destructive');
+      inputTitikKeterangan.classList.remove('border-input', 'focus-visible:ring-primary');
+      titikKetError?.classList.remove('hidden');
+      valid = false;
+    } else {
+      inputTitikKeterangan.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+      inputTitikKeterangan.classList.add('border-input', 'focus-visible:ring-primary');
+      titikKetError?.classList.add('hidden');
+    }
+
+    return valid;
+  }
+
+  inputTitikDusun?.addEventListener('input', () => { if (!titikDusunError?.classList.contains('hidden')) validateTitikForm(); });
+  inputTitikJenis?.addEventListener('input', () => { if (!titikJenisError?.classList.contains('hidden')) validateTitikForm(); });
+  selectTitikTingkat?.addEventListener('change', () => { if (!titikTingkatError?.classList.contains('hidden')) validateTitikForm(); });
+  inputTitikKeterangan?.addEventListener('input', () => { if (!titikKetError?.classList.contains('hidden')) validateTitikForm(); });
+
+  const openTitikModal = (title: string, id = "", dusun = "", jenis = "", tingkat = "", keterangan = "") => {
+    if (!titikModal) return;
+    if (titikModalTitle) titikModalTitle.innerText = title;
+    inputTitikId.value = id;
+    inputTitikDusun.value = dusun;
+    inputTitikJenis.value = jenis;
+    selectTitikTingkat.value = tingkat;
+    inputTitikKeterangan.value = keterangan;
+
+    titikDusunError?.classList.add('hidden');
+    titikJenisError?.classList.add('hidden');
+    titikTingkatError?.classList.add('hidden');
+    titikKetError?.classList.add('hidden');
+
+    titikModal.classList.remove('hidden');
+    titikModal.classList.add('flex');
+  };
+
+  const closeTitikModal = () => {
+    if (!titikModal) return;
+    titikModal.classList.remove('flex');
+    titikModal.classList.add('hidden');
+    titikForm.reset();
+    titikDusunError?.classList.add('hidden');
+    titikJenisError?.classList.add('hidden');
+    titikTingkatError?.classList.add('hidden');
+    titikKetError?.classList.add('hidden');
+  };
+
+  const addTitikBtn = document.getElementById('add-titik-btn');
+  const closeTitikBtn = document.getElementById('close-titik-modal');
+  const cancelTitikBtn = document.getElementById('cancel-titik-btn');
+
+  if (addTitikBtn) addTitikBtn.addEventListener('click', () => openTitikModal("Tambah Titik Rawan"));
+  if (closeTitikBtn) closeTitikBtn.addEventListener('click', closeTitikModal);
+  if (cancelTitikBtn) cancelTitikBtn.addEventListener('click', closeTitikModal);
+
+  if (titikForm) {
+    titikForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!validateTitikForm()) return;
+
+      const id = inputTitikId.value;
+      const payload = {
+        dusun: inputTitikDusun.value.trim(),
+        jenis: inputTitikJenis.value.trim(),
+        tingkat: selectTitikTingkat.value,
+        keterangan: inputTitikKeterangan.value.trim()
+      };
+
+      if (id) {
+        const { error } = await supabase
+          .from('bencana_titik_rawan')
+          .update(payload)
+          .eq('id', parseInt(id));
+
+        if (error) alert("Gagal mengupdate titik: " + error.message);
+        else { window.location.reload(); }
+      } else {
+        const { error } = await supabase
+          .from('bencana_titik_rawan')
+          .insert([payload]);
+
+        if (error) alert("Gagal menambah titik: " + error.message);
+        else { window.location.reload(); }
+      }
+    });
+  }
+
+  // --- 3. MANAGING KONTAK DARURAT ---
+  const kontakModal = document.getElementById('kontak-modal');
+  const kontakForm = document.getElementById('kontak-form') as HTMLFormElement;
+  const kontakModalTitle = document.getElementById('kontak-modal-title');
+  const inputKontakId = document.getElementById('kontak-id') as HTMLInputElement;
+  const inputKontakNama = document.getElementById('kontak-nama') as HTMLInputElement;
+  const inputKontakNomor = document.getElementById('kontak-nomor') as HTMLInputElement;
+  const inputKontakDeskripsi = document.getElementById('kontak-deskripsi') as HTMLInputElement;
+
+  const kontakNamaError = document.getElementById('kontak-nama-error');
+  const kontakNomorError = document.getElementById('kontak-nomor-error');
+  const kontakDescError = document.getElementById('kontak-deskripsi-error');
+
+  function validateKontakForm(): boolean {
+    let valid = true;
+    if (inputKontakNama.value.trim().length < 3) {
+      inputKontakNama.classList.add('border-destructive', 'focus-visible:ring-destructive');
+      inputKontakNama.classList.remove('border-input', 'focus-visible:ring-primary');
+      kontakNamaError?.classList.remove('hidden');
+      valid = false;
+    } else {
+      inputKontakNama.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+      inputKontakNama.classList.add('border-input', 'focus-visible:ring-primary');
+      kontakNamaError?.classList.add('hidden');
+    }
+
+    if (!inputKontakNomor.value.trim()) {
+      inputKontakNomor.classList.add('border-destructive', 'focus-visible:ring-destructive');
+      inputKontakNomor.classList.remove('border-input', 'focus-visible:ring-primary');
+      kontakNomorError?.classList.remove('hidden');
+      valid = false;
+    } else {
+      inputKontakNomor.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+      inputKontakNomor.classList.add('border-input', 'focus-visible:ring-primary');
+      kontakNomorError?.classList.add('hidden');
+    }
+
+    if (!inputKontakDeskripsi.value.trim()) {
+      inputKontakDeskripsi.classList.add('border-destructive', 'focus-visible:ring-destructive');
+      inputKontakDeskripsi.classList.remove('border-input', 'focus-visible:ring-primary');
+      kontakDescError?.classList.remove('hidden');
+      valid = false;
+    } else {
+      inputKontakDeskripsi.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+      inputKontakDeskripsi.classList.add('border-input', 'focus-visible:ring-primary');
+      kontakDescError?.classList.add('hidden');
+    }
+
+    return valid;
+  }
+
+  inputKontakNama?.addEventListener('input', () => { if (!kontakNamaError?.classList.contains('hidden')) validateKontakForm(); });
+  inputKontakNomor?.addEventListener('input', () => { if (!kontakNomorError?.classList.contains('hidden')) validateKontakForm(); });
+  inputKontakDeskripsi?.addEventListener('input', () => { if (!kontakDescError?.classList.contains('hidden')) validateKontakForm(); });
+
+  const openKontakModal = (title: string, id = "", nama = "", nomor = "", deskripsi = "") => {
+    if (!kontakModal) return;
+    if (kontakModalTitle) kontakModalTitle.innerText = title;
+    inputKontakId.value = id;
+    inputKontakNama.value = nama;
+    inputKontakNomor.value = nomor;
+    inputKontakDeskripsi.value = deskripsi;
+
+    kontakNamaError?.classList.add('hidden');
+    kontakNomorError?.classList.add('hidden');
+    kontakDescError?.classList.add('hidden');
+
+    kontakModal.classList.remove('hidden');
+    kontakModal.classList.add('flex');
+  };
+
+  const closeKontakModal = () => {
+    if (!kontakModal) return;
+    kontakModal.classList.remove('flex');
+    kontakModal.classList.add('hidden');
+    kontakForm.reset();
+    kontakNamaError?.classList.add('hidden');
+    kontakNomorError?.classList.add('hidden');
+    kontakDescError?.classList.add('hidden');
+  };
+
+  const addKontakBtn = document.getElementById('add-kontak-btn');
+  const closeKontakBtn = document.getElementById('close-kontak-modal');
+  const cancelKontakBtn = document.getElementById('cancel-kontak-btn');
+
+  if (addKontakBtn) addKontakBtn.addEventListener('click', () => openKontakModal("Tambah Kontak Darurat"));
+  if (closeKontakBtn) closeKontakBtn.addEventListener('click', closeKontakModal);
+  if (cancelKontakBtn) cancelKontakBtn.addEventListener('click', closeKontakModal);
+
+  if (kontakForm) {
+    kontakForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!validateKontakForm()) return;
+
+      const id = inputKontakId.value;
+      const payload = {
+        nama: inputKontakNama.value.trim(),
+        nomor: inputKontakNomor.value.trim(),
+        deskripsi: inputKontakDeskripsi.value.trim()
+      };
+
+      if (id) {
+        const { error } = await supabase
+          .from('bencana_kontak')
+          .update(payload)
+          .eq('id', parseInt(id));
+
+        if (error) alert("Gagal mengupdate kontak: " + error.message);
+        else { window.location.reload(); }
+      } else {
+        const { error } = await supabase
+          .from('bencana_kontak')
+          .insert([payload]);
+
+        if (error) alert("Gagal menambah kontak: " + error.message);
+        else { window.location.reload(); }
+      }
+    });
+  }
+
+  // --- 4. LIST ROW ACTION HANDLERS ---
+  document.addEventListener('DOMContentLoaded', () => {
+    // Titik Rawan Row Edit
+    const editTitikBtns = document.querySelectorAll('.edit-titik-btn');
+    editTitikBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const el = e.currentTarget as HTMLButtonElement;
+        const id = el.getAttribute('data-id') || "";
+        const dusun = el.getAttribute('data-dusun') || "";
+        const jenis = el.getAttribute('data-jenis') || "";
+        const tingkat = el.getAttribute('data-tingkat') || "Tinggi";
+        const keterangan = el.getAttribute('data-keterangan') || "";
+
+        openTitikModal("Edit Titik Rawan", id, dusun, jenis, tingkat, keterangan);
+      });
+    });
+
+    // Titik Rawan Row Delete
+    const deleteTitikBtns = document.querySelectorAll('.delete-titik-btn');
+    deleteTitikBtns.forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const el = e.currentTarget as HTMLButtonElement;
+        const id = el.getAttribute('data-id');
+        const dusun = el.getAttribute('data-dusun');
+        if (!id) return;
+
+        if (confirm(`Apakah Anda yakin ingin menghapus titik rawan di "${dusun}"?`)) {
+          const { error } = await supabase
+            .from('bencana_titik_rawan')
+            .delete()
+            .eq('id', parseInt(id));
+
+          if (error) alert("Gagal menghapus: " + error.message);
+          else window.location.reload();
+        }
+      });
+    });
+
+    // Kontak Darurat Row Edit
+    const editKontakBtns = document.querySelectorAll('.edit-kontak-btn');
+    editKontakBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const el = e.currentTarget as HTMLButtonElement;
+        const id = el.getAttribute('data-id') || "";
+        const nama = el.getAttribute('data-nama') || "";
+        const nomor = el.getAttribute('data-nomor') || "";
+        const deskripsi = el.getAttribute('data-deskripsi') || "";
+
+        openKontakModal("Edit Kontak Darurat", id, nama, nomor, deskripsi);
+      });
+    });
+
+    // Kontak Darurat Row Delete
+    const deleteKontakBtns = document.querySelectorAll('.delete-kontak-btn');
+    deleteKontakBtns.forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const el = e.currentTarget as HTMLButtonElement;
+        const id = el.getAttribute('data-id');
+        const nama = el.getAttribute('data-nama');
+        if (!id) return;
+
+        if (confirm(`Apakah Anda yakin ingin menghapus kontak darurat "${nama}"?`)) {
+          const { error } = await supabase
+            .from('bencana_kontak')
+            .delete()
+            .eq('id', parseInt(id));
+
+          if (error) alert("Gagal menghapus: " + error.message);
+          else window.location.reload();
+        }
+      });
+    });
+  });
+</script>

@@ -1,0 +1,191 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Fetch stats from Supabase
+const { data: dbStats } = await supabase
+  .from('statistik')
+  .select('*')
+  .single();
+
+const statsData = dbStats || { 
+  total_penduduk: 4250, 
+  total_pria: 2140, 
+  total_wanita: 2110, 
+  total_kk: 1320,
+  pendidikan_sd: 1060,
+  pendidikan_smp: 1275,
+  pendidikan_sma: 1360,
+  pendidikan_kuliah: 555,
+  usia_anak: 850,
+  usia_produktif: 2890,
+  usia_lansia: 510
+};
+
+// Format helper
+const formatNumber = (num: number) => (num || 0).toLocaleString('id-ID');
+---
+
+<Layout title="Data & Statistik Desa - Desa Puspamukti">
+  <div class="container mx-auto px-4 max-w-screen-xl py-12 md:py-20 space-y-12">
+    
+    <div class="text-center max-w-3xl mx-auto space-y-4">
+      <div class="inline-flex items-center rounded-full border px-3 py-1 text-sm font-semibold border-primary/20 bg-primary/10 text-primary mb-2">
+        Demografi Terkini
+      </div>
+      <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-foreground">Data & Statistik Desa</h1>
+      <p class="text-lg text-muted-foreground leading-relaxed">
+        Transparansi data kependudukan Desa Puspamukti. Angka di bawah ini merepresentasikan statistik populasi penduduk secara waktu nyata (real-time).
+      </p>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      
+      <div class="bg-card border rounded-3xl p-8 text-center shadow-sm hover:shadow-md transition-shadow">
+        <div class="w-16 h-16 mx-auto bg-primary/10 text-primary rounded-full flex items-center justify-center mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <h3 class="text-5xl font-black text-foreground">{formatNumber(statsData.total_penduduk)}</h3>
+        <p class="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-3">Total Penduduk</p>
+      </div>
+      
+      <div class="bg-card border rounded-3xl p-8 text-center shadow-sm hover:shadow-md transition-shadow">
+        <div class="w-16 h-16 mx-auto bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/></svg>
+        </div>
+        <h3 class="text-5xl font-black text-foreground">{formatNumber(statsData.total_pria)}</h3>
+        <p class="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-3">Laki-Laki</p>
+      </div>
+
+      <div class="bg-card border rounded-3xl p-8 text-center shadow-sm hover:shadow-md transition-shadow">
+        <div class="w-16 h-16 mx-auto bg-pink-500/10 text-pink-500 rounded-full flex items-center justify-center mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        </div>
+        <h3 class="text-5xl font-black text-foreground">{formatNumber(statsData.total_wanita)}</h3>
+        <p class="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-3">Perempuan</p>
+      </div>
+
+      <div class="bg-card border rounded-3xl p-8 text-center shadow-sm hover:shadow-md transition-shadow">
+        <div class="w-16 h-16 mx-auto bg-green-500/10 text-green-600 rounded-full flex items-center justify-center mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <h3 class="text-5xl font-black text-foreground">{formatNumber(statsData.total_kk)}</h3>
+        <p class="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-3">Kepala Keluarga</p>
+      </div>
+
+    </div>
+
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      
+      <!-- Chart 1: Proporsi Jenis Kelamin (Real-time Supabase Data) -->
+      <div class="bg-card border rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+        <div>
+          <h3 class="text-xl font-bold text-foreground">Perbandingan Gender</h3>
+          <p class="text-sm text-muted-foreground mt-1">Perbandingan sebaran penduduk berjenis kelamin laki-laki dan perempuan.</p>
+        </div>
+
+        <div class="space-y-4">
+          <div class="flex justify-between text-sm font-bold">
+            <span class="text-blue-500">Laki-Laki ({((statsData.total_pria / statsData.total_penduduk) * 100).toFixed(1)}%)</span>
+            <span class="text-pink-500">Perempuan ({((statsData.total_wanita / statsData.total_penduduk) * 100).toFixed(1)}%)</span>
+          </div>
+          
+          <!-- Progress bar -->
+          <div class="w-full h-8 bg-muted rounded-full overflow-hidden flex">
+            <div 
+              class="h-full bg-gradient-to-r from-blue-500 to-blue-400 flex items-center justify-center text-xs font-bold text-white transition-all duration-500"
+              style={`width: ${(statsData.total_pria / statsData.total_penduduk) * 100}%`}
+            >
+              {formatNumber(statsData.total_pria)}
+            </div>
+            <div 
+              class="h-full bg-gradient-to-r from-pink-400 to-pink-500 flex items-center justify-center text-xs font-bold text-white transition-all duration-500"
+              style={`width: ${(statsData.total_wanita / statsData.total_penduduk) * 100}%`}
+            >
+              {formatNumber(statsData.total_wanita)}
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 pt-4 border-t text-xs text-muted-foreground">
+            <div class="flex items-center gap-2">
+              <div class="w-3 h-3 rounded bg-blue-500"></div>
+              <span>Laki-Laki: {formatNumber(statsData.total_pria)} Jiwa</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-3 h-3 rounded bg-pink-500"></div>
+              <span>Perempuan: {formatNumber(statsData.total_wanita)} Jiwa</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart 2: Tingkat Pendidikan (Real-time Supabase Data) -->
+      <div class="bg-card border rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+        <div>
+          <h3 class="text-xl font-bold text-foreground">Tingkat Pendidikan Terakhir</h3>
+          <p class="text-sm text-muted-foreground mt-1">Tingkat pendidikan formal yang diselesaikan penduduk desa.</p>
+        </div>
+
+        <div class="space-y-4">
+          {[
+            { label: "SD / Sederajat", count: statsData.pendidikan_sd || 0, color: "bg-red-500" },
+            { label: "SMP / Sederajat", count: statsData.pendidikan_smp || 0, color: "bg-orange-500" },
+            { label: "SMA / Sederajat", count: statsData.pendidikan_sma || 0, color: "bg-blue-500" },
+            { label: "Diploma / Sarjana", count: statsData.pendidikan_kuliah || 0, color: "bg-green-500" }
+          ].map((item) => {
+            const pct = statsData.total_penduduk > 0 ? Math.round((item.count / statsData.total_penduduk) * 100) : 0;
+            return (
+              <div class="space-y-1.5">
+                <div class="flex justify-between text-xs font-semibold">
+                  <span class="text-foreground">{item.label}</span>
+                  <span class="text-muted-foreground">{formatNumber(item.count)} Jiwa ({pct}%)</span>
+                </div>
+                <div class="w-full h-2.5 bg-muted rounded-full overflow-hidden">
+                  <div class={`h-full ${item.color} rounded-full`} style={`width: ${pct}%`}></div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <!-- Chart 3: Kelompok Usia (Real-time Supabase Data) -->
+      <div class="bg-card border rounded-3xl p-6 sm:p-8 shadow-sm space-y-6 lg:col-span-2">
+        <div>
+          <h3 class="text-xl font-bold text-foreground">Distribusi Kelompok Usia</h3>
+          <p class="text-sm text-muted-foreground mt-1">Struktur kependudukan Desa Puspamukti berdasarkan rentang usia produktif & non-produktif.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[
+            { label: "Balita & Anak-anak (0-14 tahun)", count: statsData.usia_anak || 0, color: "bg-emerald-500", desc: "Kelompok tumbuh kembang dan usia sekolah dasar." },
+            { label: "Usia Produktif (15-64 tahun)", count: statsData.usia_productive || statsData.usia_produktif || 0, color: "bg-sky-500", desc: "Kelompok angkatan kerja utama desa." },
+            { label: "Usia Lanjut (65+ tahun)", count: statsData.usia_lansia || 0, color: "bg-amber-500", desc: "Kelompok usia non-produktif/lansia." }
+          ].map((item) => {
+            const pct = statsData.total_penduduk > 0 ? Math.round((item.count / statsData.total_penduduk) * 100) : 0;
+            return (
+              <div class="bg-muted/30 border rounded-2xl p-5 space-y-3 flex flex-col justify-between">
+                <div class="space-y-2">
+                  <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold uppercase tracking-wider text-muted-foreground">{pct}% Populasi</span>
+                    <div class={`w-2.5 h-2.5 rounded-full ${item.color}`}></div>
+                  </div>
+                  <h4 class="font-bold text-foreground text-sm">{item.label}</h4>
+                  <p class="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
+                </div>
+                <div class="pt-3 border-t">
+                  <span class="text-xl font-black text-foreground">{formatNumber(item.count)}</span>
+                  <span class="text-xs text-muted-foreground ml-1">Jiwa</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</Layout>

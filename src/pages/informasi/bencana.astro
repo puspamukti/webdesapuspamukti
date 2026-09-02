@@ -1,0 +1,435 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Fetch alert status from Supabase
+const { data: dbStatus } = await supabase
+  .from('bencana_status')
+  .select('*')
+  .eq('id', 1)
+  .single();
+
+// Fetch hazard points from Supabase
+const { data: dbTitikRawan } = await supabase
+  .from('bencana_titik_rawan')
+  .select('*')
+  .order('created_at', { ascending: true });
+
+// Fetch emergency contacts from Supabase
+const { data: dbKontak } = await supabase
+  .from('bencana_kontak')
+  .select('*')
+  .order('created_at', { ascending: true });
+
+// Fallback Status
+const status = dbStatus || {
+  level: "aman",
+  title: "Kondisi Desa Aman & Terkendali",
+  description: "Berdasarkan pantauan posko mitigasi, tidak ada potensi cuaca ekstrem atau ancaman pergeseran tanah aktif hari ini. Tetap waspada terhadap perubahan cuaca dadakan."
+};
+
+// Fallback Hazard Points
+const titikRawan = (dbTitikRawan && dbTitikRawan.length > 0) ? dbTitikRawan : [
+  { dusun: "Dusun 2 (Ngenol)", jenis: "Rawa Longsor", tingkat: "Tinggi", keterangan: "Area tebing di lereng perbukitan rawan longsor saat curah hujan tinggi lebih dari 3 jam berturut-turut." },
+  { dusun: "Dusun 1 (Cipicung)", jenis: "Rawa Banjir Luapan", tingkat: "Sedang", keterangan: "Area dataran rendah dekat aliran sungai kecil rawan genangan air jika debit sungai meningkat." },
+  { dusun: "Dusun 5 (Puncaksuji)", jenis: "Angin Kencang", tingkat: "Sedang", keterangan: "Wilayah dataran tinggi terbuka rawan angin kencang saat masa pancaroba/peralihan musim." }
+];
+
+// Fallback Contacts
+const kontakDarurat = (dbKontak && dbKontak.length > 0) ? dbKontak : [
+  { nama: "Posko Siaga Bencana Desa", nomor: "0812-3456-7890", deskripsi: "Siaga 24 Jam di Kantor Desa Puspamukti" },
+  { nama: "BPBD Kabupaten Tasikmalaya", nomor: "(0265) 545678", deskripsi: "Pusdalops Penanggulangan Bencana Daerah" },
+  { nama: "Puskesmas Puspamukti", nomor: "0852-9876-5432", deskripsi: "Layanan Ambulans & UGD Darurat" },
+  { nama: "Pemadam Kebakaran Tasikmalaya", nomor: "(0265) 331113", deskripsi: "Penanganan Kebakaran & Evakuasi Darurat" }
+];
+---
+
+<Layout title="Informasi Bencana - Desa Puspamukti">
+  <div class="container mx-auto px-4 max-w-screen-xl py-12 md:py-20 space-y-16">
+    
+    <!-- Header Section -->
+    <div class="text-center max-w-3xl mx-auto space-y-4">
+      <div class="inline-flex items-center rounded-full border px-3 py-1 text-sm font-semibold border-destructive/20 bg-destructive/10 text-destructive mb-2">
+        Mitigasi & Tanggap Darurat
+      </div>
+      <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-foreground">Informasi Kebencanaan</h1>
+      <p class="text-lg text-muted-foreground leading-relaxed">
+        Pusat informasi kesiapsiagaan, peta kerawanan wilayah, serta kontak posko darurat bencana di Desa Puspamukti.
+      </p>
+    </div>
+
+    <!-- Alert Status & Quick Call -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Status Siaga (Spans 2 columns on large screens) -->
+      <div class={`lg:col-span-2 border rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 ${
+        status.level === 'awas' ? 'bg-red-500/5 border-red-500/20' :
+        status.level === 'siaga' ? 'bg-orange-500/5 border-orange-500/20' :
+        status.level === 'waspada' ? 'bg-amber-500/5 border-amber-500/20' :
+        'bg-emerald-500/5 border-emerald-500/20'
+      }`}>
+        <div class={`w-16 h-16 rounded-full flex items-center justify-center flex-shrink-0 animate-pulse ${
+          status.level === 'awas' ? 'bg-red-500/10 text-red-500' :
+          status.level === 'siaga' ? 'bg-orange-500/10 text-orange-500' :
+          status.level === 'waspada' ? 'bg-amber-500/10 text-amber-500' :
+          'bg-emerald-500/10 text-emerald-500'
+        }`}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            {status.level === 'aman' ? (
+              <path d="m9 12 2 2 4-4"/><circle cx="12" cy="12" r="10"/>
+            ) : (
+              <path d="m12 9 4 4-4 4M4 12h16"/><path d="M12 2v20"/>
+            )}
+          </svg>
+        </div>
+        <div class="text-center md:text-left space-y-2 flex-1">
+          <div class={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider ${
+            status.level === 'awas' ? 'bg-red-500/15 text-red-600' :
+            status.level === 'siaga' ? 'bg-orange-500/15 text-orange-600' :
+            status.level === 'waspada' ? 'bg-amber-500/15 text-amber-600' :
+            'bg-emerald-500/15 text-emerald-600'
+          }`}>
+            Status: {status.level === 'aman' ? 'Aman (Hijau)' : status.level === 'waspada' ? 'Waspada (Kuning)' : status.level === 'siaga' ? 'Siaga (Oranye)' : 'Awas (Merah)'}
+          </div>
+          <h3 class="text-xl font-bold text-foreground">{status.title}</h3>
+          <p class="text-sm text-muted-foreground leading-relaxed">{status.description}</p>
+        </div>
+      </div>
+      
+      <!-- Lapor Cepat -->
+      <div class="bg-card border rounded-3xl p-6 md:p-8 flex flex-col justify-between shadow-sm">
+        <div class="space-y-2">
+          <h3 class="text-lg font-bold">Laporkan Kejadian</h3>
+          <p class="text-xs text-muted-foreground leading-relaxed">Menemukan pohon tumbang, tanah retak, atau luapan air sungai? Laporkan segera ke posko tanggap darurat desa.</p>
+        </div>
+        <button 
+          id="open-lapor-btn"
+          class="w-full inline-flex items-center justify-center rounded-xl text-xs font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 h-11 transition-colors mt-6 shadow-sm cursor-pointer"
+        >
+          Buat Laporan Darurat
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content: Titik Rawan & Kontak -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      
+      <!-- Kolom Kiri: Peta/Zona Kerawanan -->
+      <div class="lg:col-span-2 space-y-6">
+        <div class="space-y-2">
+          <h2 class="text-2xl font-bold tracking-tight">Titik Rawan Bencana Wilayah</h2>
+          <p class="text-sm text-muted-foreground">Pemetaan wilayah dusun yang memerlukan kewaspadaan ekstra berdasarkan kondisi geografis.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {titikRawan.map((item) => (
+            <div class="titik-rawan-card bg-card border rounded-2xl p-6 shadow-sm space-y-4 hover:border-destructive/30 transition-colors">
+              <div class="flex justify-between items-start gap-4">
+                <div>
+                  <h3 class="font-bold text-base text-foreground leading-snug">{item.dusun}</h3>
+                  <p class="text-xs text-muted-foreground mt-1">{item.jenis}</p>
+                </div>
+                <span class={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0 ${
+                  item.tingkat === 'Tinggi' ? 'bg-destructive/15 text-destructive' : 
+                  item.tingkat === 'Sedang' ? 'bg-amber-500/15 text-amber-600' : 
+                  'bg-emerald-500/15 text-emerald-600'
+                }`}>
+                  Risiko {item.tingkat}
+                </span>
+              </div>
+              <p class="text-xs text-muted-foreground leading-relaxed">{item.keterangan}</p>
+            </div>
+          ))}
+        </div>
+
+        {titikRawan.length > 4 && (
+          <div id="titik-pagination" class="flex items-center justify-center gap-1.5 pt-6 border-t border-border/50">
+            <button 
+              id="titik-prev-btn" 
+              class="inline-flex items-center justify-center rounded-xl text-sm font-semibold border bg-background hover:bg-muted text-muted-foreground hover:text-foreground h-9 w-9 transition-colors cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <span id="titik-page-info" class="text-xs font-bold text-muted-foreground px-2">Halaman 1 dari 1</span>
+            <button 
+              id="titik-next-btn" 
+              class="inline-flex items-center justify-center rounded-xl text-sm font-semibold border bg-background hover:bg-muted text-muted-foreground hover:text-foreground h-9 w-9 transition-colors cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
+          </div>
+        )}
+      </div>
+
+      <!-- Kolom Kanan: Kontak Darurat -->
+      <div class="space-y-6">
+        <div class="space-y-2">
+          <h2 class="text-2xl font-bold tracking-tight">Nomor Telepon Darurat</h2>
+          <p class="text-sm text-muted-foreground">Hubungi nomor darurat di bawah ini saat terjadi bahaya.</p>
+        </div>
+
+        <div class="bg-card border rounded-3xl p-6 shadow-sm divide-y">
+          {kontakDarurat.map((item) => (
+            <div class="py-4 first:pt-0 last:pb-0 space-y-1.5">
+              <h4 class="font-bold text-sm text-foreground">{item.nama}</h4>
+              <p class="text-lg font-black text-destructive tracking-wide leading-none">{item.nomor}</p>
+              <p class="text-[10px] text-muted-foreground">{item.deskripsi}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SOP Mitigasi -->
+    <div class="bg-muted/30 border rounded-3xl p-8 md:p-10 space-y-6">
+      <div class="space-y-2">
+        <h3 class="text-xl font-bold">Panduan Mitigasi Bencana Mandiri</h3>
+        <p class="text-sm text-muted-foreground">Langkah awal penyelamatan diri saat terjadi bencana alam.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Gempa Bumi -->
+        <div class="bg-background rounded-2xl p-6 border space-y-3">
+          <div class="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold text-sm">1</div>
+          <h4 class="font-bold text-sm">Mitigasi Gempa Bumi</h4>
+          <p class="text-xs text-muted-foreground leading-relaxed">Berlindung di bawah meja kokoh, lindungi kepala, jauhi kaca, dan segera cari lapangan terbuka jika guncangan mereda.</p>
+        </div>
+        <!-- Tanah Longsor -->
+        <div class="bg-background rounded-2xl p-6 border space-y-3">
+          <div class="w-10 h-10 rounded-lg bg-destructive/10 text-destructive flex items-center justify-center font-bold text-sm">2</div>
+          <h4 class="font-bold text-sm">Mitigasi Tanah Longsor</h4>
+          <p class="text-xs text-muted-foreground leading-relaxed">Evakuasi diri segera menjauhi lereng bukit jika terdengar suara gemuruh disertai air sungai yang tiba-tiba keruh.</p>
+        </div>
+        <!-- Angin Kencang -->
+        <div class="bg-background rounded-2xl p-6 border space-y-3">
+          <div class="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center font-bold text-sm">3</div>
+          <h4 class="font-bold text-sm">Mitigasi Angin Kencang</h4>
+          <p class="text-xs text-muted-foreground leading-relaxed">Berlindung di dalam bangunan beton yang kokoh, hindari berteduh di bawah pohon rindang, baliho, atau tiang listrik.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Form Modal (Lapor Kejadian Bencana) -->
+  <div id="lapor-modal" class="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-card border w-full max-w-md rounded-3xl shadow-xl overflow-hidden flex flex-col">
+      <div class="px-6 py-5 border-b flex justify-between items-center bg-destructive/5 border-destructive/10">
+        <h3 class="font-bold text-lg text-destructive font-sans flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+          Laporkan Kejadian Bencana
+        </h3>
+        <button id="close-lapor-btn" class="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="lapor-form" class="p-6 space-y-4">
+        <div class="space-y-1.5">
+          <label for="lapor-nama" class="text-xs font-bold text-foreground uppercase">Nama Pelapor</label>
+          <input 
+            type="text" 
+            id="lapor-nama" 
+            placeholder="Tulis nama lengkap Anda" 
+            class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+            required
+          />
+        </div>
+
+        <div class="space-y-1.5">
+          <label for="lapor-kontak" class="text-xs font-bold text-foreground uppercase">No. WhatsApp / Telepon</label>
+          <input 
+            type="tel" 
+            id="lapor-kontak" 
+            placeholder="Contoh: 08123456789" 
+            class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+            required
+          />
+        </div>
+
+        <div class="space-y-1.5">
+          <label for="lapor-kejadian" class="text-xs font-bold text-foreground uppercase">Jenis Kejadian</label>
+          <select 
+            id="lapor-kejadian" 
+            class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+            required
+          >
+            <option value="Tanah Longsor">Tanah Longsor</option>
+            <option value="Banjir Luapan">Banjir Luapan</option>
+            <option value="Pohon Tumbang">Pohon Tumbang / Jalan Terhalang</option>
+            <option value="Angin Kencang / Kerusakan Atap">Angin Kencang / Kerusakan Atap</option>
+            <option value="Kebakaran">Kebakaran</option>
+            <option value="Lainnya">Lainnya</option>
+          </select>
+        </div>
+
+        <div class="space-y-1.5">
+          <label for="lapor-lokasi" class="text-xs font-bold text-foreground uppercase">Lokasi Kejadian (Dusun/RT/RW)</label>
+          <input 
+            type="text" 
+            id="lapor-lokasi" 
+            placeholder="Contoh: Dusun 2, RT 03/RW 04" 
+            class="flex h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+            required
+          />
+        </div>
+
+        <div class="space-y-1.5">
+          <label for="lapor-detail" class="text-xs font-bold text-foreground uppercase">Deskripsi & Detail Kejadian</label>
+          <textarea 
+            id="lapor-detail" 
+            rows="3" 
+            placeholder="Tuliskan kronologi singkat dan kondisi terkini di lapangan..."
+            class="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary resize-none"
+            required
+          ></textarea>
+        </div>
+
+        <div class="pt-4 border-t flex justify-end gap-3">
+          <button 
+            type="button" 
+            id="cancel-lapor-btn" 
+            class="inline-flex items-center justify-center rounded-xl border border-input bg-background hover:bg-accent text-sm font-bold h-11 px-4 cursor-pointer"
+          >
+            Batal
+          </button>
+          <button 
+            type="submit" 
+            id="submit-lapor-btn" 
+            class="inline-flex items-center justify-center rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground text-sm font-bold h-11 px-6 shadow-md cursor-pointer"
+          >
+            Kirim Laporan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  const modal = document.getElementById('lapor-modal');
+  const openBtn = document.getElementById('open-lapor-btn');
+  const closeBtn = document.getElementById('close-lapor-btn');
+  const cancelBtn = document.getElementById('cancel-lapor-btn');
+  const form = document.getElementById('lapor-form') as HTMLFormElement;
+  const submitBtn = document.getElementById('submit-lapor-btn') as HTMLButtonElement;
+
+  const openLaporModal = () => {
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+  };
+
+  const closeLaporModal = () => {
+    if (modal) {
+      modal.classList.remove('flex');
+      modal.classList.add('hidden');
+      form.reset();
+    }
+  };
+
+  if (openBtn) openBtn.addEventListener('click', openLaporModal);
+  if (closeBtn) closeBtn.addEventListener('click', closeLaporModal);
+  if (cancelBtn) cancelBtn.addEventListener('click', closeLaporModal);
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const nama = (document.getElementById('lapor-nama') as HTMLInputElement).value;
+      const kontak = (document.getElementById('lapor-kontak') as HTMLInputElement).value;
+      const kejadian = (document.getElementById('lapor-kejadian') as HTMLSelectElement).value;
+      const lokasi = (document.getElementById('lapor-lokasi') as HTMLInputElement).value;
+      const detail = (document.getElementById('lapor-detail') as HTMLTextAreaElement).value;
+
+      if (submitBtn) {
+        submitBtn.innerText = "Mengirim...";
+        submitBtn.setAttribute('disabled', 'true');
+      }
+
+      try {
+        const payload = {
+          nama: `${nama} (Laporan Bencana - ${lokasi})`,
+          kontak,
+          kategori: 'Kebencanaan',
+          isi: `[${kejadian}] di ${lokasi}. Detail: ${detail}`,
+          status: 'menunggu',
+          created_at: new Date().toISOString()
+        };
+
+        const { supabase } = await import('../../lib/supabase');
+        const { error } = await supabase
+          .from('pengaduan')
+          .insert([payload]);
+
+        if (error) throw error;
+
+        alert("Laporan bencana darurat Anda berhasil dikirim ke posko desa! Tim siaga akan segera menindaklanjuti.");
+        closeLaporModal();
+      } catch (err: any) {
+        alert("Gagal mengirim laporan: " + err.message);
+      } finally {
+        if (submitBtn) {
+          submitBtn.innerText = "Kirim Laporan";
+          submitBtn.removeAttribute('disabled');
+        }
+      }
+    });
+  }
+
+  // --- CLIENT SIDE PAGINATION FOR HAZARD POINTS ---
+  const TITIK_ITEMS_PER_PAGE = 4;
+  let currentTitikPage = 1;
+  const titikCards = document.querySelectorAll('.titik-rawan-card');
+  const totalTitikItems = titikCards.length;
+  const totalTitikPages = Math.ceil(totalTitikItems / TITIK_ITEMS_PER_PAGE);
+
+  const titikPrevBtn = document.getElementById('titik-prev-btn') as HTMLButtonElement;
+  const titikNextBtn = document.getElementById('titik-next-btn') as HTMLButtonElement;
+  const titikPageInfo = document.getElementById('titik-page-info');
+
+  const updateTitikPagination = () => {
+    if (totalTitikItems <= TITIK_ITEMS_PER_PAGE) return;
+
+    titikCards.forEach((card, idx) => {
+      const start = (currentTitikPage - 1) * TITIK_ITEMS_PER_PAGE;
+      const end = start + TITIK_ITEMS_PER_PAGE;
+      if (idx >= start && idx < end) {
+        card.classList.remove('hidden');
+      } else {
+        card.classList.add('hidden');
+      }
+    });
+
+    if (titikPageInfo) {
+      titikPageInfo.innerText = `Halaman ${currentTitikPage} dari ${totalTitikPages}`;
+    }
+    if (titikPrevBtn) {
+      titikPrevBtn.disabled = currentTitikPage === 1;
+    }
+    if (titikNextBtn) {
+      titikNextBtn.disabled = currentTitikPage === totalTitikPages;
+    }
+  };
+
+  if (totalTitikItems > TITIK_ITEMS_PER_PAGE) {
+    if (titikPrevBtn) {
+      titikPrevBtn.addEventListener('click', () => {
+        if (currentTitikPage > 1) {
+          currentTitikPage--;
+          updateTitikPagination();
+        }
+      });
+    }
+    if (titikNextBtn) {
+      titikNextBtn.addEventListener('click', () => {
+        if (currentTitikPage < totalTitikPages) {
+          currentTitikPage++;
+          updateTitikPagination();
+        }
+      });
+    }
+    updateTitikPagination();
+  }
+</script>

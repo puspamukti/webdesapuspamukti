@@ -1,0 +1,161 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Fetch all markers from Supabase
+const { data: dbLokasi } = await supabase
+  .from('peta_lokasi')
+  .select('*');
+
+const lokasiList = dbLokasi || [];
+const fallbacks = lokasiList;
+
+// Fetch map settings (boundary geojson) from Supabase
+const { data: dbSettings } = await supabase
+  .from('pengaturan_peta')
+  .select('*')
+  .eq('id', 1)
+  .single();
+
+const dbGeojson = dbSettings?.batas_geojson || null;
+---
+
+<Layout title="Peta Wilayah - Desa Puspamukti">
+  <!-- CSS Leaflet CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+  <div class="container mx-auto px-4 max-w-screen-xl py-12 md:py-20 space-y-12">
+    
+    <!-- Header Section -->
+    <div class="text-center max-w-3xl mx-auto space-y-4">
+      <div class="inline-flex items-center rounded-full border px-3 py-1 text-sm font-semibold border-primary/20 bg-primary/10 text-primary mb-2">
+        Sistem Informasi Geografis
+      </div>
+      <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-foreground">Peta Wilayah Desa</h1>
+      <p class="text-lg text-muted-foreground leading-relaxed">
+        Eksplorasi batas wilayah administratif, letak geografis, serta lokasi fasilitas umum penting di Desa Puspamukti secara interaktif dengan visual Google Maps.
+      </p>
+    </div>
+
+    <!-- Peta Container -->
+    <div class="bg-card border rounded-3xl p-4 shadow-sm overflow-hidden space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b pb-4 px-2">
+        <div>
+          <h3 class="font-bold text-lg text-foreground">Peta Interaktif Puspamukti</h3>
+          <p class="text-xs text-muted-foreground mt-0.5">Membaca data peta langsung dari satelit Google Maps & database desa.</p>
+        </div>
+        <div class="flex gap-2">
+          <button id="btn-road" class="px-3.5 py-1.5 rounded-lg bg-primary text-primary-foreground font-semibold text-xs transition-colors shadow-sm cursor-pointer">Google Maps (Jalan)</button>
+          <button id="btn-sat" class="px-3.5 py-1.5 rounded-lg bg-secondary text-secondary-foreground font-semibold text-xs transition-colors hover:bg-secondary/80 cursor-pointer">Google Maps (Satelit)</button>
+        </div>
+      </div>
+      
+      <!-- Div target untuk Map -->
+      <div id="map" class="w-full h-[550px] rounded-2xl border z-10 relative bg-muted"></div>
+    </div>
+
+    <!-- Legend & Info -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-card border rounded-2xl p-6 shadow-sm space-y-3">
+        <h4 class="font-bold text-sm text-foreground flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></span>
+          Kantor Desa Puspamukti
+        </h4>
+        <p class="text-xs text-muted-foreground leading-relaxed">Pusat pelayanan administratif dan pemerintahan desa. Terletak di jalan utama desa yang mudah diakses kendaraan roda dua dan roda empat.</p>
+      </div>
+
+      <div class="bg-card border rounded-2xl p-6 shadow-sm space-y-3">
+        <h4 class="font-bold text-sm text-foreground flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+          Fasilitas Pendidikan & Kesehatan
+        </h4>
+        <p class="text-xs text-muted-foreground leading-relaxed">Tersebar merata di setiap dusun, meliputi sekolah dasar (SDN Puspamukti), PAUD, posyandu pembantu, dan masjid jami desa.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- JS Leaflet CDN -->
+  <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <script is:inline define:vars={{ fallbacks, dbGeojson }}>
+    // Koordinat pusat Cigalontang / Puspamukti
+    const centerCoords = [-7.355, 108.016];
+
+    // Inisialisasi Peta
+    const map = L.map('map').setView(centerCoords, 14);
+
+    // Layer 1: Google Maps Roadmap (Peta Jalan)
+    const googleRoadmap = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+      maxZoom: 20,
+      attribution: '&copy; Google Maps'
+    }).addTo(map);
+
+    // Layer 2: Google Maps Satellite (Satelit Bumi)
+    const googleSatellite = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+      maxZoom: 20,
+      attribution: '&copy; Google Maps Satelit'
+    });
+
+    let boundaryLayer;
+
+    // Load boundary from Supabase GeoJSON if available
+    if (dbGeojson) {
+      try {
+        boundaryLayer = L.geoJSON(dbGeojson, {
+          style: {
+            color: '#dc2626',
+            fillColor: '#ef4444',
+            fillOpacity: 0.12,
+            weight: 2.5,
+            dashArray: '6, 8'
+          }
+        }).addTo(map);
+        boundaryLayer.bindPopup('<b>Batas Wilayah Administratif Resmi Desa Puspamukti (GeoJSON)</b>');
+      } catch (err) {
+        console.error("Error drawing GeoJSON boundary:", err);
+      }
+    }
+
+    // Fix default Leaflet icon paths
+    delete L.Icon.Default.prototype._getIconUrl;
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+      iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+    });
+
+    // Draw markers dynamically
+    fallbacks.forEach(loc => {
+      const latNum = parseFloat(loc.lat);
+      const lngNum = parseFloat(loc.lng);
+      
+      if (!isNaN(latNum) && !isNaN(lngNum)) {
+        const marker = L.marker([latNum, lngNum]).addTo(map);
+        marker.bindPopup(`<b>${loc.nama}</b><br><span class="text-xs text-muted-foreground">${loc.tipe}</span><hr class="my-1"><p class="text-xs">${loc.deskripsi || ''}</p>`);
+        
+        // Open village office by default
+        if (loc.tipe === 'Kantor Desa') {
+          marker.openPopup();
+        }
+      }
+    });
+
+    // Event Switch Layer Satelit / Standar
+    document.getElementById('btn-road').addEventListener('click', (e) => {
+      map.removeLayer(googleSatellite);
+      googleRoadmap.addTo(map);
+      
+      e.target.className = "px-3.5 py-1.5 rounded-lg bg-primary text-primary-foreground font-semibold text-xs transition-colors shadow-sm cursor-pointer";
+      document.getElementById('btn-sat').className = "px-3.5 py-1.5 rounded-lg bg-secondary text-secondary-foreground font-semibold text-xs transition-colors hover:bg-secondary/80 cursor-pointer";
+    });
+
+    document.getElementById('btn-sat').addEventListener('click', (e) => {
+      map.removeLayer(googleRoadmap);
+      googleSatellite.addTo(map);
+      
+      e.target.className = "px-3.5 py-1.5 rounded-lg bg-primary text-primary-foreground font-semibold text-xs transition-colors shadow-sm cursor-pointer";
+      document.getElementById('btn-road').className = "px-3.5 py-1.5 rounded-lg bg-secondary text-secondary-foreground font-semibold text-xs transition-colors hover:bg-secondary/80 cursor-pointer";
+    });
+  </script>
+</Layout>

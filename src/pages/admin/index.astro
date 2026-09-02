@@ -1,0 +1,177 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Fetch exact counts from Supabase
+const { count: beritaCount } = await supabase
+  .from('berita')
+  .select('*', { count: 'exact', head: true });
+
+const { count: regulasiCount } = await supabase
+  .from('regulasi')
+  .select('*', { count: 'exact', head: true });
+
+const { count: staffCount } = await supabase
+  .from('perangkat_desa')
+  .select('*', { count: 'exact', head: true });
+
+const { count: pengaduanCount } = await supabase
+  .from('pengaduan')
+  .select('*', { count: 'exact', head: true });
+
+// Fetch latest complaints/reports from citizens
+const { data: dbLatestPengaduan } = await supabase
+  .from('pengaduan')
+  .select('*')
+  .order('created_at', { ascending: false })
+  .limit(3);
+
+const latestPengaduan = dbLatestPengaduan || [];
+---
+
+<AdminLayout title="Dasbor Utama">
+  <div class="space-y-6">
+    
+    <!-- Page Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold tracking-tight text-foreground">Dasbor Utama</h1>
+      <p class="text-muted-foreground mt-1.5 text-sm md:text-base font-normal">Ringkasan statistik live, laporan masuk dari warga, dan jalan pintas pengelolaan portal Desa Puspamukti.</p>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      
+      <!-- Stat 1: Berita -->
+      <a href="/admin/berita" class="bg-card border rounded-2xl p-6 shadow-sm flex items-center gap-5 hover:border-blue-500/30 hover:shadow-md transition-all group">
+        <div class="w-14 h-14 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
+        </div>
+        <div>
+          <p class="text-[11px] font-extrabold text-muted-foreground uppercase tracking-widest">Total Berita</p>
+          <h3 class="text-3xl font-black text-foreground mt-1">{beritaCount || 0}</h3>
+        </div>
+      </a>
+
+      <!-- Stat 2: Regulasi -->
+      <a href="/admin/regulasi" class="bg-card border rounded-2xl p-6 shadow-sm flex items-center gap-5 hover:border-green-500/30 hover:shadow-md transition-all group">
+        <div class="w-14 h-14 rounded-2xl bg-green-500/10 text-green-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+        </div>
+        <div>
+          <p class="text-[11px] font-extrabold text-muted-foreground uppercase tracking-widest">Regulasi Desa</p>
+          <h3 class="text-3xl font-black text-foreground mt-1">{regulasiCount || 0}</h3>
+        </div>
+      </a>
+
+      <!-- Stat 3: Aparatur -->
+      <a href="/admin/aparatur" class="bg-card border rounded-2xl p-6 shadow-sm flex items-center gap-5 hover:border-purple-500/30 hover:shadow-md transition-all group">
+        <div class="w-14 h-14 rounded-2xl bg-purple-500/10 text-purple-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div>
+          <p class="text-[11px] font-extrabold text-muted-foreground uppercase tracking-widest">Aparatur & LKD</p>
+          <h3 class="text-3xl font-black text-foreground mt-1">{staffCount || 0}</h3>
+        </div>
+      </a>
+
+      <!-- Stat 4: Suara/Pengaduan Warga -->
+      <a href="/admin/pengaduan" class="bg-card border rounded-2xl p-6 shadow-sm flex items-center gap-5 hover:border-red-500/30 hover:shadow-md transition-all group">
+        <div class="w-14 h-14 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div>
+          <p class="text-[11px] font-extrabold text-muted-foreground uppercase tracking-widest">Laporan Warga</p>
+          <h3 class="text-3xl font-black text-foreground mt-1">{pengaduanCount || 0}</h3>
+        </div>
+      </a>
+
+    </div>
+
+    <!-- Quick Actions & Latest Reports -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+      
+      <!-- Pengaduan & Laporan Masuk Terbaru -->
+      <div class="bg-card border rounded-3xl shadow-sm overflow-hidden flex flex-col h-full">
+        <div class="px-6 py-5 border-b bg-muted/20 flex justify-between items-center">
+          <h3 class="font-bold text-lg text-foreground">Suara Warga Terbaru</h3>
+          <span class="inline-flex items-center rounded-full bg-red-500/10 px-2.5 py-0.5 text-xs font-bold text-red-600">
+            Inbox Live
+          </span>
+        </div>
+        
+        {latestPengaduan.length === 0 ? (
+          <div class="p-8 text-center text-muted-foreground flex-1 flex flex-col items-center justify-center">
+            <div class="w-16 h-16 bg-muted rounded-full mx-auto flex items-center justify-center mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <p class="font-bold text-foreground">Belum ada laporan masuk.</p>
+            <p class="text-xs mt-1 max-w-xs mx-auto">Ketika ada warga mengirim laporan bencana atau pengaduan, riwayatnya akan muncul seketika di sini.</p>
+          </div>
+        ) : (
+          <div class="divide-y flex-1">
+            {latestPengaduan.map((item) => (
+              <div class="p-5 hover:bg-muted/10 transition-colors flex flex-col gap-2">
+                <div class="flex justify-between items-start gap-4">
+                  <div>
+                    <h4 class="font-bold text-sm text-foreground">{item.nama}</h4>
+                    <span class="text-[10px] text-muted-foreground">Kontak: {item.kontak}</span>
+                  </div>
+                  <span class={`px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
+                    item.status === 'selesai' ? 'bg-green-500/10 text-green-600 border border-green-500/20' : 'bg-amber-500/10 text-amber-600 border border-amber-500/20 animate-pulse'
+                  }`}>
+                    {item.status}
+                  </span>
+                </div>
+                <p class="text-xs text-muted-foreground line-clamp-2 leading-relaxed bg-muted/20 border rounded-xl p-3">{item.isi}</p>
+              </div>
+            ))}
+            <div class="p-4 bg-muted/10 border-t flex justify-center">
+              <a href="/admin/pengaduan" class="text-xs text-primary font-bold hover:underline">Lihat Semua Laporan Warga &rarr;</a>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <!-- Jalan Pintas Akses Cepat -->
+      <div class="bg-card border rounded-3xl shadow-sm overflow-hidden flex flex-col h-full">
+        <div class="px-6 py-5 border-b bg-muted/20">
+          <h3 class="font-bold text-lg">Akses Cepat Pengelolaan</h3>
+        </div>
+        <div class="p-6 grid gap-4 flex-1 justify-center content-center">
+          
+          <a href="/admin/berita" class="flex items-center gap-4 w-full p-4 rounded-2xl hover:bg-muted/50 transition-all border hover:shadow-sm">
+            <div class="w-10 h-10 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+            </div>
+            <div>
+              <p class="font-bold text-foreground text-sm">Kelola Berita & Pengumuman</p>
+              <p class="text-[11px] text-muted-foreground mt-0.5 leading-none">Tulis berita kegiatan pembangunan atau rilis pers desa.</p>
+            </div>
+          </a>
+          
+          <a href="/admin/regulasi" class="flex items-center gap-4 w-full p-4 rounded-2xl hover:bg-muted/50 transition-all border hover:shadow-sm">
+            <div class="w-10 h-10 rounded-full bg-green-500/10 text-green-600 flex items-center justify-center shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+            </div>
+            <div>
+              <p class="font-bold text-foreground text-sm">Unggah Dokumen Regulasi</p>
+              <p class="text-[11px] text-muted-foreground mt-0.5 leading-none">Tambahkan dokumen Perdes, Perkades, atau SK Kades terbaru.</p>
+            </div>
+          </a>
+
+          <a href="/admin/aparatur" class="flex items-center gap-4 w-full p-4 rounded-2xl hover:bg-muted/50 transition-all border hover:shadow-sm">
+            <div class="w-10 h-10 rounded-full bg-purple-500/10 text-purple-600 flex items-center justify-center shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            </div>
+            <div>
+              <p class="font-bold text-foreground text-sm">Kelola Aparatur & Struktur</p>
+              <p class="text-[11px] text-muted-foreground mt-0.5 leading-none">Edit pengurus TP-PKK, BPD, LPMD, atau staf perangkat desa.</p>
+            </div>
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</AdminLayout>

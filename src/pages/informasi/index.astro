@@ -1,0 +1,80 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+const menus = [
+  {
+    title: "Media & Berita",
+    desc: "Dapatkan liputan berita terkini, dokumentasi kegiatan, serta pengumuman resmi dari Pemerintah Desa Puspamukti.",
+    href: "/informasi/media",
+    color: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+    icon: "M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2 M18 14h-8 M15 18h-5 M10 6h8v4h-8V6Z"
+  },
+  {
+    title: "Peta Wilayah Desa",
+    desc: "Lihat letak geografis, batas administratif dusun, dan peta interaktif sarana prasarana publik di Desa Puspamukti.",
+    href: "/informasi/peta",
+    color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+    icon: "M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z M12 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"
+  },
+  {
+    title: "Zona Wilayah Khusus",
+    desc: "Daftar zonasi wilayah konservasi alam hutan lindung, cagar budaya religi, dan aset tanah carik milik desa.",
+    href: "/informasi/zona-khusus",
+    color: "bg-purple-500/10 text-purple-600 border-purple-500/20",
+    icon: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
+  },
+  {
+    title: "Mitigasi & Siaga Bencana",
+    desc: "Informasi peta daerah rawan longsor/banjir, status kesiapsiagaan desa, serta nomor posko bencana darurat.",
+    href: "/informasi/bencana",
+    color: "bg-red-500/10 text-red-500 border-red-500/20",
+    icon: "M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z M12 9v4 M12 17h.01"
+  }
+];
+---
+
+<Layout title="Portal Informasi Desa - Desa Puspamukti">
+  <div class="container mx-auto px-4 max-w-screen-xl py-12 md:py-20 space-y-16">
+    
+    <!-- Header Section -->
+    <div class="text-center max-w-3xl mx-auto space-y-4">
+      <div class="inline-flex items-center rounded-full border px-3 py-1 text-sm font-semibold border-primary/20 bg-primary/10 text-primary mb-2">
+        Pusat Informasi Publik
+      </div>
+      <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-foreground">Portal Informasi Desa</h1>
+      <p class="text-lg text-muted-foreground leading-relaxed">
+        Pintu akses keterbukaan informasi publik bagi warga Desa Puspamukti. Temukan kabar terkini, data tata ruang, peta wilayah, dan siaga bencana.
+      </p>
+    </div>
+
+    <!-- Menus Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+      {menus.map((menu) => (
+        <a 
+          href={menu.href} 
+          class="group bg-card border rounded-3xl p-8 shadow-sm hover:shadow-lg hover:border-primary/50 transition-all flex flex-col justify-between h-full hover:-translate-y-1 duration-300"
+        >
+          <div class="space-y-6">
+            <!-- Icon -->
+            <div class={`w-14 h-14 rounded-2xl flex items-center justify-center border ${menu.color} group-hover:scale-110 transition-transform duration-300`}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d={menu.icon}></path>
+              </svg>
+            </div>
+            
+            <!-- Content -->
+            <div class="space-y-2">
+              <h3 class="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{menu.title}</h3>
+              <p class="text-sm text-muted-foreground leading-relaxed">{menu.desc}</p>
+            </div>
+          </div>
+
+          <div class="mt-8 flex items-center text-primary font-bold text-xs group-hover:underline underline-offset-4">
+            Buka Halaman &rarr;
+          </div>
+        </a>
+      ))}
+    </div>
+
+  </div>
+</Layout>

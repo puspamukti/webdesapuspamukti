@@ -1,0 +1,176 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Tim Pengembang KKN">
+  <div class="container mx-auto px-4 max-w-screen-xl py-12 md:py-20 space-y-20">
+    
+    <!-- Hero / Header -->
+    <div class="text-center space-y-6">
+      <div class="inline-flex items-center rounded-full border px-3 py-1 text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary/10 text-primary hover:bg-primary/20 mb-2">
+        Tentang Tim Pengembang
+      </div>
+      <h1 class="text-4xl md:text-5xl font-bold tracking-tight">Dedikasi untuk Puspamukti</h1>
+      <p class="text-muted-foreground text-lg md:text-xl max-w-3xl mx-auto leading-relaxed">
+        Website ini diinisiasi dan dikembangkan secara mandiri oleh Mahasiswa Kuliah Kerja Nyata (KKN) <strong class="text-foreground">Universitas Perjuangan Tasikmalaya Tahun 2026</strong> sebagai bentuk pengabdian untuk kemajuan digitalisasi Desa Puspamukti.
+      </p>
+    </div>
+
+    <!-- Sambutan Ketua KKN -->
+    <div class="bg-muted/30 rounded-3xl p-8 md:p-12 border shadow-sm">
+      <div class="flex flex-col md:flex-row gap-10 items-center">
+        <div class="w-full md:w-1/3 flex justify-center">
+          <div class="w-40 h-40 md:w-48 md:h-48 rounded-full overflow-hidden border-8 border-background shadow-xl relative group">
+             <div class="w-full h-full relative overflow-hidden transition-transform duration-500 group-hover:scale-105">
+               <img 
+                 src="/foto/Fahri.webp" 
+                 alt="Fahri Muhamad Firdaus" 
+                 width="200"
+                 height="200"
+                 loading="lazy"
+                 decoding="async"
+                 class="absolute max-w-none object-cover w-[140%] h-[140%] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" 
+               />
+             </div>
+          </div>
+        </div>
+        <div class="w-full md:w-2/3 space-y-6 text-center md:text-left">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary/20 mx-auto md:mx-0"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
+          <p class="text-lg md:text-xl text-foreground font-medium italic leading-relaxed">
+            "Kami berharap platform digital ini dapat menjadi jembatan transparansi dan kemudahan akses informasi bagi masyarakat. Terima kasih yang tak terhingga kepada Pemerintah Desa dan warga Puspamukti yang telah menerima kami layaknya keluarga sendiri selama masa pengabdian ini."
+          </p>
+          <div class="pt-2">
+            <h3 class="font-bold text-2xl text-foreground">Fahri Muhamad Firdaus</h3>
+            <p class="text-primary font-medium mt-1">Penanggung Jawab Proker Website / KKN UNPER 2026</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Foto Kelompok & Anggota -->
+    <div class="space-y-16 pt-12">
+      <div class="text-center space-y-3">
+        <h2 class="text-3xl md:text-4xl font-bold tracking-tight">Keluarga KKN Puspamukti 2026</h2>
+        <p class="text-muted-foreground text-lg">Kebersamaan dan gotong royong merajut asa di tanah Puspamukti</p>
+      </div>
+      
+      <div class="w-full aspect-video md:aspect-[21/9] rounded-3xl overflow-hidden border-2 bg-muted relative shadow-md group">
+        <img src="/foto/diatas.webp" width="1200" height="514" loading="lazy" decoding="async" alt="Foto Bersama Kelompok KKN Puspamukti 2026" class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-700" />
+      </div>
+      
+      <!-- Anggota List Placeholder -->
+      <div class="space-y-6 pt-12 md:pt-16">
+        <!-- Kormades -->
+        <div class="flex justify-center mb-10">
+          <div class="w-64 md:w-80 bg-card border-2 border-primary rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col group">
+            <!-- Foto Kormades 1:1 (Edge to Edge) -->
+            <div class="aspect-square bg-muted relative overflow-hidden flex items-center justify-center shrink-0 border-b">
+              <div class="w-full h-full relative overflow-hidden transition-transform duration-500 group-hover:scale-110">
+                <img 
+                  src="/foto/Sandi.webp" 
+                  alt="Sandi Rahmat Pamungkas" 
+                  width="320"
+                  height="320"
+                  loading="lazy"
+                  decoding="async"
+                  class="absolute max-w-none object-cover w-[240%] h-[240%] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" 
+                  style={{
+                    objectPosition: 'center 95%'
+                  }}
+                />
+              </div>
+            </div>
+            <div class="p-5 text-center space-y-1">
+              <h4 class="font-bold text-sm text-primary uppercase tracking-wide">Kormades</h4>
+              <p class="text-[11px] text-primary/80 font-medium leading-none">(Koordinator Mahasiswa Desa)</p>
+              <p class="font-bold text-foreground text-lg leading-tight mt-3">Sandi Rahmat Pamungkas</p>
+              <p class="text-[10px] text-muted-foreground uppercase tracking-wider mt-1">Agroteknologi Pertanian</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 14 Anggota -->
+        <div class="flex flex-wrap justify-center gap-4 md:gap-6">
+          {[
+            { nama: "Veronica Anastasya", prodi: "Pendidikan Bahasa Inggris", foto: "", scale: 1, pos: "center" },
+            { nama: "Zahira Trisnabila", prodi: "Teknik Sipil", foto: "/foto/Zahira.webp", scale: 1.25, pos: "85% center" },
+            { nama: "Mohammad Azam Qohthani", prodi: "Teknik Informatika", foto: "", scale: 1, pos: "center" },
+            { nama: "Fahri Muhamad Firdaus", prodi: "Teknik Informatika", foto: "/foto/Fahri.webp", scale: 1.4, pos: "center" },
+            { nama: "Ikhsan Willy Rizkia", prodi: "Manajemen", foto: "/foto/Ikhsan.webp", scale: 1, pos: "center" },
+            { nama: "Destri Pusvita", prodi: "Pendidikan Guru Sekolah Dasar", foto: "/foto/Destri.webp", scale: 1.45, pos: "center" },
+            { nama: "Diffa Milati Hanifa", prodi: "Pendidikan Guru Sekolah Dasar", foto: "/foto/Diffa.webp", scale: 1, pos: "center" },
+            { nama: "Mulfi Muhammad Fauzi", prodi: "Akuntansi", foto: "/foto/Mulfi.webp", scale: 1, pos: "center" },
+            { nama: "Ratna Dewi Komalasari", prodi: "Farmasi", foto: "/foto/Ratna.webp", scale: 1, pos: "center" },
+            { nama: "Sri Intan Tiarayani", prodi: "Manajemen", foto: "/foto/Intan.webp", scale: 1.45, pos: "center" },
+            { nama: "Via Nuroktaviani", prodi: "Pendidikan Guru Sekolah Dasar", foto: "/foto/Via.webp", scale: 1.85, pos: "center 85%" },
+            { nama: "Linda Mardiana", prodi: "Teknik Informatika", foto: "", scale: 1, pos: "center" },
+            { nama: "Siti Khodijah", prodi: "Manajemen", foto: "", scale: 1, pos: "center" },
+            { nama: "Hasby Faisal Sidiq", prodi: "Manajemen", foto: "/foto/Hasby.webp", scale: 1, pos: "center" }
+          ].map((member) => (
+            <div class="w-[calc(50%-0.5rem)] sm:w-[calc(33.333%-1rem)] md:w-[calc(25%-1.125rem)] lg:w-[calc(20%-1.2rem)] bg-card border rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:border-primary/50 transition-all flex flex-col group">
+              <!-- Foto 1:1 (Edge to Edge) -->
+              <div class="aspect-square bg-muted relative overflow-hidden flex items-center justify-center shrink-0 border-b">
+                {member.foto ? (
+                  <div class="w-full h-full relative overflow-hidden transition-transform duration-500 group-hover:scale-110">
+                    <img 
+                      src={member.foto} 
+                      alt={member.nama} 
+                      class="absolute max-w-none object-cover top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" 
+                      style={{
+                        width: `${(member.scale || 1) * 100}%`,
+                        height: `${(member.scale || 1) * 100}%`,
+                        objectPosition: member.pos || 'center'
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div class="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground bg-primary/5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" class="text-primary/30"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  </div>
+                )}
+              </div>
+              <!-- Details at Bottom -->
+              <div class="p-4 text-center space-y-1 flex-1 flex flex-col justify-center">
+                <h4 class="font-bold text-sm text-foreground leading-tight">{member.nama}</h4>
+                <p class="text-[9px] md:text-[10px] text-primary font-semibold uppercase tracking-wider leading-tight mt-1">{member.prodi}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <!-- Ucapan Terima Kasih -->
+    <div class="border-t pb-12 w-full" style="margin-top: 80px; padding-top: 80px;">
+      <div class="max-w-4xl mx-auto text-center space-y-8">
+        <h2 class="text-3xl font-bold">Terima Kasih</h2>
+        <p class="text-muted-foreground text-lg leading-relaxed">
+          Pencapaian ini tidak lepas dari dukungan penuh, arahan, bimbingan, serta kebaikan dari berbagai pihak. Kami mengucapkan terima kasih yang sebesar-besarnya kepada:
+        </p>
+         <div class="flex flex-wrap justify-center gap-4 md:gap-6 mt-10">
+          <div class="w-[calc(50%-0.5rem)] sm:w-[calc(33.333%-1rem)] p-4 md:p-5 rounded-2xl border-2 border-primary/20 bg-primary/5 text-center flex flex-col justify-center items-center shadow-sm hover:bg-primary/10 transition-colors">
+            <h4 class="font-bold text-sm md:text-base text-foreground leading-snug">Bapak Atang Ridwan</h4>
+            <p class="text-[10px] md:text-xs text-primary font-semibold mt-1.5 uppercase tracking-wider">Kepala Desa</p>
+          </div>
+          <div class="w-[calc(50%-0.5rem)] sm:w-[calc(33.333%-1rem)] p-4 md:p-5 rounded-2xl border-2 border-primary/20 bg-primary/5 text-center flex flex-col justify-center items-center shadow-sm hover:bg-primary/10 transition-colors">
+            <h4 class="font-bold text-sm md:text-base text-foreground leading-snug">Bapak Irwan Subarna</h4>
+            <p class="text-[10px] md:text-xs text-primary font-semibold mt-1.5 uppercase tracking-wider">Sekretaris Desa</p>
+          </div>
+          <div class="w-[calc(50%-0.5rem)] sm:w-[calc(33.333%-1rem)] p-4 md:p-5 rounded-2xl border-2 border-primary/20 bg-primary/5 text-center flex flex-col justify-center items-center shadow-sm hover:bg-primary/10 transition-colors">
+            <h4 class="font-bold text-sm md:text-base text-foreground leading-snug">Bapak Agus Supriatman, S.Kom., M.T.</h4>
+            <p class="text-[10px] md:text-xs text-primary font-semibold mt-1.5 uppercase tracking-wider">Dosen Pembimbing Lapangan</p>
+          </div>
+          <div class="w-[calc(50%-0.5rem)] sm:w-[calc(33.333%-1rem)] p-4 md:p-5 rounded-2xl border bg-card text-center flex flex-col justify-center items-center shadow-sm hover:border-primary/40 transition-colors">
+            <h4 class="font-bold text-sm md:text-base text-foreground leading-snug">Seluruh Perangkat Desa</h4>
+            <p class="text-[10px] md:text-xs text-muted-foreground mt-1.5 uppercase tracking-wider">Desa Puspamukti</p>
+          </div>
+          <div class="w-[calc(50%-0.5rem)] sm:w-[calc(33.333%-1rem)] p-4 md:p-5 rounded-2xl border bg-card text-center flex flex-col justify-center items-center shadow-sm hover:border-primary/40 transition-colors">
+            <h4 class="font-bold text-sm md:text-base text-foreground leading-snug">Tokoh Masyarakat</h4>
+            <p class="text-[10px] md:text-xs text-muted-foreground mt-1.5 uppercase tracking-wider">& Warga Desa Puspamukti</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</Layout>

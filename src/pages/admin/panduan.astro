@@ -1,0 +1,270 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Buku Panduan Operasional">
+  <div class="space-y-8 max-w-5xl mx-auto pb-16">
+    
+    <!-- Header Banner -->
+    <div class="bg-gradient-to-r from-primary/15 via-primary/5 to-transparent p-6 sm:p-8 rounded-3xl border border-primary/20 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-xs animate-fade-in">
+      <div class="space-y-2">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-2xs">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>
+          Dokumen Serah Terima Resmi KKN UNPER 2026
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">Buku Panduan Operasional & Tata Kelola</h1>
+        <p class="text-xs sm:text-sm text-muted-foreground max-w-2xl leading-relaxed">
+          Petunjuk teknis operasional bagi Pemerintah Desa Puspamukti dalam mengelola Portal Admin, E-Surat Mandiri, APBDes, dan Pelayanan Warga.
+        </p>
+      </div>
+
+      <div class="flex items-center gap-3 shrink-0 print:hidden">
+        <button 
+          id="btn-print-panduan"
+          class="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-4 py-2.5 rounded-xl text-xs shadow-md cursor-pointer transition-all"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+          Cetak / Simpan PDF
+        </button>
+        <a 
+          href="/" 
+          target="_blank" 
+          class="inline-flex items-center gap-1.5 bg-secondary hover:bg-secondary/80 text-secondary-foreground font-bold px-3.5 py-2.5 rounded-xl text-xs transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+          Web Publik
+        </a>
+      </div>
+    </div>
+
+    <!-- Quick Navigation Grid -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 print:hidden">
+      <a href="#bab-esurat" class="p-4 rounded-2xl bg-card border hover:border-primary/50 transition-all text-center space-y-1 group shadow-2xs">
+        <div class="text-2xl">📝</div>
+        <div class="text-xs font-bold text-foreground group-hover:text-primary transition-colors">Layanan E-Surat</div>
+        <p class="text-[10px] text-muted-foreground">Verifikasi & Penomoran</p>
+      </a>
+      <a href="#bab-warga" class="p-4 rounded-2xl bg-card border hover:border-primary/50 transition-all text-center space-y-1 group shadow-2xs">
+        <div class="text-2xl">👥</div>
+        <div class="text-xs font-bold text-foreground group-hover:text-primary transition-colors">Portal Warga</div>
+        <p class="text-[10px] text-muted-foreground">Login, Bansos & Aspirasi</p>
+      </a>
+      <a href="#bab-apbdes" class="p-4 rounded-2xl bg-card border hover:border-primary/50 transition-all text-center space-y-1 group shadow-2xs">
+        <div class="text-2xl">📊</div>
+        <div class="text-xs font-bold text-foreground group-hover:text-primary transition-colors">Transparansi APBDes</div>
+        <p class="text-[10px] text-muted-foreground">Realisasi & Pos Anggaran</p>
+      </a>
+      <a href="#bab-teknis" class="p-4 rounded-2xl bg-card border hover:border-primary/50 transition-all text-center space-y-1 group shadow-2xs">
+        <div class="text-2xl">⚙️</div>
+        <div class="text-xs font-bold text-foreground group-hover:text-primary transition-colors">Database & Teknis</div>
+        <p class="text-[10px] text-muted-foreground">Supabase & Klasifikasi</p>
+      </a>
+    </div>
+
+    <!-- SECTION 1: PELAYANAN E-SURAT & PENOMORAN (A4 / F4) -->
+    <section id="bab-esurat" class="bg-card border rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
+      <div class="flex items-center gap-3 border-b pb-4">
+        <span class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold text-sm">1</span>
+        <div>
+          <h2 class="text-lg sm:text-xl font-bold text-foreground">Tata Cara Pelayanan & Penomoran E-Surat</h2>
+          <p class="text-xs text-muted-foreground">Proses verifikasi pengajuan online warga dan pencetakan dokumen resmi.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="space-y-3 bg-muted/30 p-5 rounded-2xl border">
+          <h3 class="text-sm font-bold text-foreground flex items-center gap-2">
+            <span class="text-primary font-mono font-bold">A.</span> Memproses Surat Pengajuan Online
+          </h3>
+          <ol class="text-xs text-muted-foreground space-y-2 list-decimal list-inside leading-relaxed">
+            <li>Buka menu <strong class="text-foreground">"Permohonan E-Surat"</strong> (<code class="text-[10px] bg-muted px-1.5 py-0.5 rounded">/admin/surat</code>).</li>
+            <li>Klik tombol biru <strong class="text-blue-600 font-bold">[ ⚙️ Beri Nomor / Edit ]</strong> pada baris pemohon.</li>
+            <li>Ubah status menjadi <strong class="text-foreground">"Disetujui"</strong>.</li>
+            <li>Ketik nomor surat manual sesuai buku agenda kantor desa, atau klik tombol <strong class="text-primary font-bold">[ ⚡ Buat No. Otomatis ]</strong>.</li>
+            <li>Klik <strong class="text-foreground">"Simpan & Terbitkan"</strong>.</li>
+          </ol>
+        </div>
+
+        <div class="space-y-3 bg-muted/30 p-5 rounded-2xl border">
+          <h3 class="text-sm font-bold text-foreground flex items-center gap-2">
+            <span class="text-primary font-mono font-bold">B.</span> Menerbitkan Surat Manual (Loket / Walk-in)
+          </h3>
+          <ol class="text-xs text-muted-foreground space-y-2 list-decimal list-inside leading-relaxed">
+            <li>Untuk warga yang datang langsung ke Balai Desa, klik tombol <strong class="text-primary font-bold">[ ➕ Buat Surat Manual (Loket Desa) ]</strong> di kanan atas.</li>
+            <li>Isi Nama Pemohon, NIK (16 digit), RT/RW, Jenis Surat, dan Keperluan.</li>
+            <li>Masukkan nomor register surat yang ingin digunakan.</li>
+            <li>Klik <strong class="text-foreground">"Terbitkan Surat"</strong> $\rightarrow$ Dokumen langsung tersimpan dan siap dicetak.</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- Panduan Ukuran Kertas -->
+      <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2 text-xs">
+        <div class="font-bold text-amber-800 flex items-center gap-2">
+          <span>📄</span> Pilihan Ukuran Kertas Resmi: A4 vs F4 (Folio)
+        </div>
+        <p class="text-amber-900/80 leading-relaxed">
+          Saat menekan tombol hijau <strong>[ 🖨️ Cetak ]</strong>, jendela pratinjau menyediakan tombol ukuran kertas:
+          <br />• <strong>A4 (210 × 297 mm):</strong> Untuk pencetakan di lembaran kertas standar A4.
+          <br />• <strong>F4 / Folio (215 × 330 mm):</strong> Untuk pencetakan di lembaran kertas Folio dinas agar teks proporsional dan tidak terpotong.
+        </p>
+      </div>
+    </section>
+
+    <!-- SECTION 2: STANDAR KODE PENOMORAN SURAT -->
+    <section class="bg-card border rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
+      <div class="flex items-center gap-3 border-b pb-4">
+        <span class="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center font-bold text-sm">2</span>
+        <div>
+          <h2 class="text-lg sm:text-xl font-bold text-foreground">Standar Klasifikasi Kode Penomoran Surat</h2>
+          <p class="text-xs text-muted-foreground">Sesuai Permendagri tentang Pedoman Tata Naskah Dinas Pemerintah Desa.</p>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs text-left">
+          <thead class="bg-muted text-muted-foreground font-bold">
+            <tr>
+              <th class="px-4 py-3 rounded-l-xl">Klasifikasi Surat</th>
+              <th class="px-4 py-3">Kode Baku</th>
+              <th class="px-4 py-3">Format Penomoran</th>
+              <th class="px-4 py-3 rounded-r-xl">Contoh Nomor Surat</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y text-muted-foreground">
+            <tr>
+              <td class="px-4 py-3 font-bold text-foreground">Kependudukan / SKTM / Domisili / SKCK</td>
+              <td class="px-4 py-3 font-mono font-bold text-primary">470</td>
+              <td class="px-4 py-3 font-mono text-[11px]">470/[No.Urut]/Pemdes/[Tahun]</td>
+              <td class="px-4 py-3 font-mono font-bold text-foreground">470/015/Pemdes/2026</td>
+            </tr>
+            <tr>
+              <td class="px-4 py-3 font-bold text-foreground">Surat Keterangan Usaha (SKU) / Ekonomi</td>
+              <td class="px-4 py-3 font-mono font-bold text-primary">500</td>
+              <td class="px-4 py-3 font-mono text-[11px]">500/[No.Urut]/Pemdes/[Tahun]</td>
+              <td class="px-4 py-3 font-mono font-bold text-foreground">500/008/Pemdes/2026</td>
+            </tr>
+            <tr>
+              <td class="px-4 py-3 font-bold text-foreground">Pelayanan Online Mandiri (Opsional)</td>
+              <td class="px-4 py-3 font-mono font-bold text-primary">470 / 500</td>
+              <td class="px-4 py-3 font-mono text-[11px]">470/[No.Urut]/Pemdes.Online/[Tahun]</td>
+              <td class="px-4 py-3 font-mono font-bold text-foreground">470/002/Pemdes.Online/2026</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 3: PANDUAN PORTAL WARGA -->
+    <section id="bab-warga" class="bg-card border rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
+      <div class="flex items-center gap-3 border-b pb-4">
+        <span class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold text-sm">3</span>
+        <div>
+          <h2 class="text-lg sm:text-xl font-bold text-foreground">Panduan Layanan Mandiri Warga Desa</h2>
+          <p class="text-xs text-muted-foreground">Alur akses mandiri masyarakat melalui smartphone atau komputer rumah.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="p-4 rounded-2xl bg-muted/20 border space-y-2">
+          <div class="font-bold text-xs text-foreground flex items-center gap-2">
+            <span class="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px]">1</span>
+            Login Mandiri
+          </div>
+          <p class="text-[11px] text-muted-foreground leading-relaxed">
+            Warga mengakses <code class="text-[10px]">/warga/login</code>, memasukkan 16 Digit NIK dan Tanggal Lahir untuk otentikasi aman tanpa perlu membuat akun berbelit.
+          </p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-muted/20 border space-y-2">
+          <div class="font-bold text-xs text-foreground flex items-center gap-2">
+            <span class="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px]">2</span>
+            Cek Status Bansos
+          </div>
+          <p class="text-[11px] text-muted-foreground leading-relaxed">
+            Warga dapat memeriksa secara transparan apakah terdaftar sebagai penerima PKH, BPNT, BLT Dana Desa, atau KIS PBI.
+          </p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-muted/20 border space-y-2">
+          <div class="font-bold text-xs text-foreground flex items-center gap-2">
+            <span class="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px]">3</span>
+            Lapor Kades (Aspirasi)
+          </div>
+          <p class="text-[11px] text-muted-foreground leading-relaxed">
+            Warga dapat mengirim keluhan infrastruktur, usulan musrenbang, atau bantuan sosial langsung ke kotak masuk admin desa.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: PENGELOLAAN KONTEN & APBDES -->
+    <section id="bab-apbdes" class="bg-card border rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
+      <div class="flex items-center gap-3 border-b pb-4">
+        <span class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold text-sm">4</span>
+        <div>
+          <h2 class="text-lg sm:text-xl font-bold text-foreground">Pengelolaan Transparansi APBDes & Berita</h2>
+          <p class="text-xs text-muted-foreground">Keterbukaan informasi publik dan akuntabilitas keuangan desa.</p>
+        </div>
+      </div>
+
+      <div class="space-y-4 text-xs text-muted-foreground leading-relaxed">
+        <div class="p-4 rounded-2xl bg-muted/30 border space-y-2">
+          <h4 class="font-bold text-foreground">📊 Pembaruan Transparansi Anggaran (/admin/transparansi):</h4>
+          <p>
+            Admin dapat memperbarui rincian APBDes tahun berjalan (Pendapatan Desa, Belanja Bidang Pemerintahan, Pembangunan, Pembinaan, Pemberdayaan, dan Penanggulangan Bencana). Grafik publik dan persentase realisasi akan otomatis diperbarui secara realtime.
+          </p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-muted/30 border space-y-2">
+          <h4 class="font-bold text-foreground">📰 Publikasi Berita & Galeri (/admin/berita):</h4>
+          <p>
+            Setiap ada kegiatan pembagian bansos, gotong royong, atau musyawarah desa, staf desa cukup mengunggah judul, isi ringkas, dan foto kegiatan. Berita akan langsung tampil di halaman depan website.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: INFORMASI TEKNIS & KONTAK PENGEMBANG -->
+    <section id="bab-teknis" class="bg-card border rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
+      <div class="flex items-center gap-3 border-b pb-4">
+        <span class="w-8 h-8 rounded-xl bg-sky-500/10 text-sky-600 flex items-center justify-center font-bold text-sm">5</span>
+        <div>
+          <h2 class="text-lg sm:text-xl font-bold text-foreground">Spesifikasi Teknis & Bantuan Pemeliharaan</h2>
+          <p class="text-xs text-muted-foreground">Informasi arsitektur sistem dan saluran dukungan pengembang.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+        <div class="p-4 rounded-2xl bg-muted/20 border space-y-2">
+          <span class="font-bold text-foreground block">Stack Teknologi:</span>
+          <ul class="space-y-1 text-muted-foreground list-disc list-inside">
+            <li>Astro v5 (Static Site Generator & SSR)</li>
+            <li>Tailwind CSS v4 + Radix UI</li>
+            <li>Supabase PostgreSQL Cloud Backend</li>
+            <li>Dual-mode Offline Local Storage Cache</li>
+          </ul>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-muted/20 border space-y-2">
+          <span class="font-bold text-foreground block">Kontak Bantuan & Serah Terima:</span>
+          <p class="text-muted-foreground">
+            Dibuat oleh Tim KKN Universitas Perjuangan Tasikmalaya Tahun 2026 untuk Pemerintah Desa Puspamukti.
+          </p>
+          <a href="/tim-kkn" class="text-primary font-bold inline-flex items-center gap-1 hover:underline">
+            Lihat Profil Lengkap Tim KKN &rarr;
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</AdminLayout>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('btn-print-panduan')?.addEventListener('click', () => {
+      window.print();
+    });
+  });
+</script>

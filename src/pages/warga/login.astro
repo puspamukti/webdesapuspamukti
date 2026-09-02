@@ -1,0 +1,314 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="Login Portal Warga | Desa Puspamukti">
+  <main class="container mx-auto px-4 py-16 max-w-screen-xl min-h-[75vh] flex items-center justify-center">
+    
+    <div class="w-full max-w-md bg-card border rounded-3xl shadow-xl overflow-hidden animate-slide-up relative">
+      <div class="bg-primary/10 px-6 py-8 text-center border-b border-primary/20">
+        <div class="w-16 h-16 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <h1 class="text-2xl font-bold text-foreground">Portal Warga</h1>
+        <p class="text-xs sm:text-sm text-muted-foreground mt-2">Layanan Mandiri Warga Desa Puspamukti</p>
+      </div>
+      
+      <form id="warga-login-form" class="p-6 sm:p-8 space-y-5" novalidate>
+        <!-- Field NIK -->
+        <div class="space-y-1.5 text-left">
+          <div class="flex justify-between items-center">
+            <label for="nik" class="text-xs font-bold text-foreground uppercase tracking-wider">NIK (16 Digit Angka)</label>
+            <span id="nik-counter" class="text-[10px] font-mono text-muted-foreground">0/16 digit</span>
+          </div>
+          <div class="relative">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"><rect width="18" height="14" x="3" y="5" rx="2" ry="2"/><path d="M7 15h4M7 11h.01"/></svg>
+            <input 
+              type="text" 
+              id="nik" 
+              inputmode="numeric"
+              maxlength="16"
+              placeholder="Masukkan 16 digit NIK Anda" 
+              class="flex h-12 w-full rounded-xl border border-input bg-background pl-10 pr-3 text-sm font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs transition-colors"
+              required
+            />
+          </div>
+          <!-- Inline Error for NIK -->
+          <p id="nik-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+            <span id="nik-error-text">NIK harus terdiri dari 16 digit angka.</span>
+          </p>
+          <p class="text-[10px] text-muted-foreground text-right mt-1">Sesuai KTP / Kartu Keluarga</p>
+        </div>
+
+        <!-- Field Tanggal Lahir -->
+        <div class="space-y-1.5 text-left">
+          <div class="flex justify-between items-center">
+            <label for="tgl-lahir" class="text-xs font-bold text-foreground uppercase tracking-wider">Tanggal Lahir (DDMMYYYY)</label>
+            <span id="tgl-preview" class="text-[10px] font-medium text-primary hidden"></span>
+          </div>
+          <div class="relative">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+            <input 
+              type="text" 
+              id="tgl-lahir" 
+              inputmode="numeric"
+              maxlength="8"
+              placeholder="Contoh: 17081985 atau 05121990" 
+              class="flex h-12 w-full rounded-xl border border-input bg-background pl-10 pr-3 text-sm font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs transition-colors"
+              required
+            />
+          </div>
+          <!-- Inline Error for Tanggal Lahir -->
+          <p id="tgl-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+            <span id="tgl-error-text">Format tanggal lahir harus 8 angka (DDMMYYYY).</span>
+          </p>
+          <p class="text-[10px] text-muted-foreground text-right mt-1">Ketik 8 angka: Tanggal (2) + Bulan (2) + Tahun (4)</p>
+        </div>
+
+        <button type="submit" id="login-btn" class="w-full inline-flex items-center justify-center rounded-xl text-sm font-bold transition-all bg-primary text-primary-foreground hover:bg-primary/90 h-12 mt-2 shadow-md gap-2 cursor-pointer">
+          Masuk ke Portal
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </button>
+      </form>
+      
+      <div class="bg-muted/30 p-4 border-t text-center space-y-1">
+        <p class="text-xs text-muted-foreground">
+          🔒 Layanan identitas kependudukan digital Desa Puspamukti.
+        </p>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Custom User-Friendly Validation Popup Modal for Warga -->
+  <div id="warga-auth-modal" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="w-full max-w-md bg-card border rounded-3xl shadow-2xl p-6 sm:p-8 text-center space-y-5 animate-scale-in">
+      <div id="warga-modal-icon-box" class="w-16 h-16 rounded-2xl bg-destructive/10 text-destructive flex items-center justify-center mx-auto border border-destructive/20 shadow-inner">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+      </div>
+
+      <div class="space-y-2">
+        <h3 id="warga-modal-title" class="text-xl font-extrabold text-foreground">Data Warga Tidak Ditemukan</h3>
+        <p id="warga-modal-desc" class="text-sm text-muted-foreground leading-relaxed">
+          Maaf, NIK atau Tanggal Lahir yang Anda masukkan belum cocok dengan arsip data kependudukan Desa Puspamukti. Silakan periksa kembali.
+        </p>
+      </div>
+
+      <button id="warga-modal-close-btn" class="w-full inline-flex items-center justify-center rounded-xl text-sm font-bold bg-primary text-primary-foreground hover:bg-primary/90 h-12 shadow-md cursor-pointer transition-all">
+        Periksa Kembali
+      </button>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import { supabase } from '../../lib/supabase';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // Check if already logged in
+    const sessionStr = localStorage.getItem('warga_session');
+    if (sessionStr) {
+      window.location.href = '/warga';
+      return;
+    }
+
+    const form = document.getElementById('warga-login-form');
+    const loginBtn = document.getElementById('login-btn');
+    const nikInput = document.getElementById('nik') as HTMLInputElement;
+    const tglInput = document.getElementById('tgl-lahir') as HTMLInputElement;
+
+    const nikCounter = document.getElementById('nik-counter');
+    const nikError = document.getElementById('nik-error');
+    const nikErrorText = document.getElementById('nik-error-text');
+
+    const tglPreview = document.getElementById('tgl-preview');
+    const tglError = document.getElementById('tgl-error');
+    const tglErrorText = document.getElementById('tgl-error-text');
+
+    // Custom Modal Elements
+    const modal = document.getElementById('warga-auth-modal');
+    const modalTitle = document.getElementById('warga-modal-title');
+    const modalDesc = document.getElementById('warga-modal-desc');
+    const modalCloseBtn = document.getElementById('warga-modal-close-btn');
+
+    function showWargaModal(title: string, message: string) {
+      if (modalTitle) modalTitle.textContent = title;
+      if (modalDesc) modalDesc.textContent = message;
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+    }
+
+    function hideWargaModal() {
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+      nikInput?.focus();
+    }
+
+    modalCloseBtn?.addEventListener('click', hideWargaModal);
+    modal?.addEventListener('click', (e) => {
+      if (e.target === modal) hideWargaModal();
+    });
+
+    // Real-time NIK Input Filter & Inline Validation
+    function validateNIK(): boolean {
+      const raw = nikInput.value.replace(/[^0-9]/g, '');
+      nikInput.value = raw; // Auto filter non-digits
+
+      if (nikCounter) nikCounter.textContent = `${raw.length}/16 digit`;
+
+      if (!raw) {
+        nikInput.classList.add('border-destructive', 'focus-visible:ring-destructive');
+        nikInput.classList.remove('border-input', 'focus-visible:ring-primary');
+        if (nikErrorText) nikErrorText.textContent = 'NIK tidak boleh kosong.';
+        nikError?.classList.remove('hidden');
+        return false;
+      } else if (raw.length < 16) {
+        nikInput.classList.add('border-destructive', 'focus-visible:ring-destructive');
+        nikInput.classList.remove('border-input', 'focus-visible:ring-primary');
+        if (nikErrorText) nikErrorText.textContent = `NIK kurang ${16 - raw.length} digit lagi (harus 16 angka).`;
+        nikError?.classList.remove('hidden');
+        return false;
+      } else {
+        nikInput.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+        nikInput.classList.add('border-input', 'focus-visible:ring-primary');
+        nikError?.classList.add('hidden');
+        return true;
+      }
+    }
+
+    // Real-time Tanggal Lahir Input Filter & Inline Validation
+    function validateTgl(): boolean {
+      const raw = tglInput.value.replace(/[^0-9]/g, '');
+      tglInput.value = raw; // Auto filter non-digits
+
+      if (raw.length === 8) {
+        const day = parseInt(raw.substring(0, 2), 10);
+        const month = parseInt(raw.substring(2, 4), 10);
+        const year = parseInt(raw.substring(4, 8), 10);
+
+        const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+
+        if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1900 || year > 2030) {
+          tglInput.classList.add('border-destructive', 'focus-visible:ring-destructive');
+          tglInput.classList.remove('border-input', 'focus-visible:ring-primary');
+          if (tglErrorText) tglErrorText.textContent = 'Format tanggal (01-31) atau bulan (01-12) tidak valid.';
+          tglError?.classList.remove('hidden');
+          if (tglPreview) tglPreview.classList.add('hidden');
+          return false;
+        }
+
+        // Show friendly preview
+        if (tglPreview) {
+          tglPreview.textContent = `🗓️ ${day} ${monthNames[month - 1]} ${year}`;
+          tglPreview.classList.remove('hidden');
+        }
+
+        tglInput.classList.remove('border-destructive', 'focus-visible:ring-destructive');
+        tglInput.classList.add('border-input', 'focus-visible:ring-primary');
+        tglError?.classList.add('hidden');
+        return true;
+      } else if (!raw) {
+        tglInput.classList.add('border-destructive', 'focus-visible:ring-destructive');
+        tglInput.classList.remove('border-input', 'focus-visible:ring-primary');
+        if (tglErrorText) tglErrorText.textContent = 'Tanggal lahir tidak boleh kosong.';
+        tglError?.classList.remove('hidden');
+        if (tglPreview) tglPreview.classList.add('hidden');
+        return false;
+      } else {
+        tglInput.classList.add('border-destructive', 'focus-visible:ring-destructive');
+        tglInput.classList.remove('border-input', 'focus-visible:ring-primary');
+        if (tglErrorText) tglErrorText.textContent = `Masukkan 8 digit angka (Contoh: 17081985). Saat ini: ${raw.length} digit.`;
+        tglError?.classList.remove('hidden');
+        if (tglPreview) tglPreview.classList.add('hidden');
+        return false;
+      }
+    }
+
+    nikInput?.addEventListener('input', () => {
+      validateNIK();
+    });
+
+    tglInput?.addEventListener('input', () => {
+      validateTgl();
+    });
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const isNikValid = validateNIK();
+      const isTglValid = validateTgl();
+
+      if (!isNikValid || !isTglValid) {
+        return;
+      }
+
+      const nik = nikInput.value.trim();
+      const rawTgl = tglInput.value.trim();
+
+      // Convert DDMMYYYY to YYYY-MM-DD
+      const day = rawTgl.substring(0, 2);
+      const month = rawTgl.substring(2, 4);
+      const year = rawTgl.substring(4, 8);
+      const isoDate = `${year}-${month}-${day}`;
+
+      if (loginBtn) {
+        loginBtn.textContent = 'Memeriksa Data Warga...';
+        loginBtn.setAttribute('disabled', 'true');
+      }
+
+      try {
+        // Query Supabase penduduk table
+        const { data, error } = await supabase
+          .from('penduduk')
+          .select('*')
+          .eq('nik', nik)
+          .eq('tanggal_lahir', isoDate)
+          .maybeSingle();
+
+        if (data) {
+          const isFemale = (data.nama || '').toLowerCase().includes('siti') || 
+                           (data.nama || '').toLowerCase().includes('aminah') || 
+                           (data.nama || '').toLowerCase().includes('dewi') || 
+                           (data.nama || '').toLowerCase().includes('putri');
+
+          // Save session from verified Supabase Database
+          localStorage.setItem('warga_session', JSON.stringify({
+            id: data.id,
+            nik: data.nik,
+            nama: data.nama,
+            rt_rw: data.rt_rw || '01/02',
+            jenis_kelamin: data.jenis_kelamin || (isFemale ? 'Perempuan' : 'Laki-laki'),
+            tanggal_lahir: data.tanggal_lahir,
+            tempat_tanggal_lahir: `${data.tempat_lahir || 'Tasikmalaya'}, ${new Date(data.tanggal_lahir).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+            agama: data.agama || 'Islam',
+            status_bantuan: data.status_bantuan || 'Tidak Menerima',
+            login_time: new Date().toISOString()
+          }));
+
+          window.location.href = '/warga';
+          return;
+        }
+
+        throw new Error('Data tidak ditemukan');
+
+      } catch (err) {
+        console.error(err);
+        showWargaModal(
+          'Data Warga Tidak Ditemukan',
+          'Maaf, NIK atau Tanggal Lahir yang Anda masukkan belum cocok dengan arsip data kependudukan Desa Puspamukti. Pastikan NIK dan tanggal lahir sudah sesuai.'
+        );
+
+        if (loginBtn) {
+          loginBtn.innerHTML = `Masuk ke Portal <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
+          loginBtn.removeAttribute('disabled');
+        }
+      }
+    });
+  });
+</script>
