@@ -85,20 +85,20 @@ import Layout from '../layouts/Layout.astro';
         <!-- 14 Anggota -->
         <div class="flex flex-wrap justify-center gap-4 md:gap-6">
           {[
-            { nama: "Veronica Anastasya", prodi: "Pendidikan Bahasa Inggris", foto: "", scale: 1, pos: "center" },
-            { nama: "Zahira Trisnabila", prodi: "Teknik Sipil", foto: "/foto/Zahira.webp", scale: 1.25, pos: "85% center" },
-            { nama: "Mohammad Azam Qohthani", prodi: "Teknik Informatika", foto: "", scale: 1, pos: "center" },
-            { nama: "Fahri Muhamad Firdaus", prodi: "Teknik Informatika", foto: "/foto/Fahri.webp", scale: 1, pos: "center" },
-            { nama: "Ikhsan Willy Rizkia", prodi: "Manajemen", foto: "/foto/Ikhsan.webp", scale: 1, pos: "center" },
-            { nama: "Destri Pusvita", prodi: "Pendidikan Guru Sekolah Dasar", foto: "/foto/Destri.webp", scale: 1.45, pos: "center" },
-            { nama: "Diffa Milati Hanifa", prodi: "Pendidikan Guru Sekolah Dasar", foto: "/foto/Diffa.webp", scale: 1, pos: "center" },
-            { nama: "Mulfi Muhammad Fauzi", prodi: "Akuntansi", foto: "/foto/Mulfi.webp", scale: 1, pos: "center" },
-            { nama: "Ratna Dewi Komalasari", prodi: "Farmasi", foto: "/foto/Ratna.webp", scale: 1, pos: "center" },
-            { nama: "Sri Intan Tiarayani", prodi: "Manajemen", foto: "/foto/Intan.webp", scale: 1.45, pos: "center" },
-            { nama: "Via Nuroktaviani", prodi: "Pendidikan Guru Sekolah Dasar", foto: "/foto/Via.webp", scale: 1.85, pos: "center 85%" },
-            { nama: "Linda Mardiana", prodi: "Teknik Informatika", foto: "", scale: 1, pos: "center" },
-            { nama: "Siti Khodijah", prodi: "Manajemen", foto: "", scale: 1, pos: "center" },
-            { nama: "Hasby Faisal Sidiq", prodi: "Manajemen", foto: "/foto/Hasby.webp", scale: 1, pos: "center" }
+            { nama: "Veronica Anastasya", prodi: "Pendidikan Bahasa Inggris", foto: "" },
+            { nama: "Zahira Trisnabila", prodi: "Teknik Sipil", foto: "/foto/Zahira.webp" },
+            { nama: "Mohammad Azam Qohthani", prodi: "Teknik Informatika", foto: "" },
+            { nama: "Fahri Muhamad Firdaus", prodi: "Teknik Informatika", foto: "/foto/Fahri.webp" },
+            { nama: "Ikhsan Willy Rizkia", prodi: "Manajemen", foto: "/foto/Ikhsan.webp" },
+            { nama: "Destri Pusvita", prodi: "Pendidikan Guru Sekolah Dasar", foto: "/foto/Destri.webp" },
+            { nama: "Diffa Milati Hanifa", prodi: "Pendidikan Guru Sekolah Dasar", foto: "/foto/Diffa.webp" },
+            { nama: "Mulfi Muhammad Fauzi", prodi: "Akuntansi", foto: "/foto/Mulfi.webp" },
+            { nama: "Ratna Dewi Komalasari", prodi: "Farmasi", foto: "/foto/Ratna.webp" },
+            { nama: "Sri Intan Tiarayani", prodi: "Manajemen", foto: "/foto/Intan.webp" },
+            { nama: "Via Nuroktaviani", prodi: "Pendidikan Guru Sekolah Dasar", foto: "/foto/Via.webp" },
+            { nama: "Linda Mardiana", prodi: "Teknik Informatika", foto: "" },
+            { nama: "Siti Khodijah", prodi: "Manajemen", foto: "" },
+            { nama: "Hasby Faisal Sidiq", prodi: "Manajemen", foto: "/foto/Hasby.webp" }
           ].map((member) => (
             <div class="w-[calc(50%-0.5rem)] sm:w-[calc(33.333%-1rem)] md:w-[calc(25%-1.125rem)] lg:w-[calc(20%-1.2rem)] bg-card border rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:border-primary/50 transition-all flex flex-col group">
               <!-- Foto 1:1 (Edge to Edge) -->
@@ -108,12 +108,11 @@ import Layout from '../layouts/Layout.astro';
                     <img 
                       src={member.foto} 
                       alt={member.nama} 
-                      class="absolute max-w-none object-cover top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" 
-                      style={{
-                        width: `${(member.scale || 1) * 100}%`,
-                        height: `${(member.scale || 1) * 100}%`,
-                        objectPosition: member.pos || 'center'
-                      }}
+                      width="240"
+                      height="240"
+                      loading="lazy"
+                      decoding="async"
+                      class="w-full h-full object-cover object-center" 
                     />
                   </div>
                 ) : (
