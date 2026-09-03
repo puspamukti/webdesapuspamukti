@@ -35,14 +35,14 @@ import AuthLayout from '../../layouts/AuthLayout.astro';
                 type="email" 
                 id="email" 
                 class="flex h-12 w-full rounded-xl border border-input bg-background pl-10 pr-4 py-2 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" 
-                placeholder="Contoh: admin@puspamukti.id" 
+                placeholder="Contoh: puspamuktidesa@gmail.com" 
                 required 
               />
             </div>
             <!-- Inline Error Message for Email -->
             <p id="email-error" class="hidden text-xs text-destructive font-medium mt-1 flex items-center gap-1">
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
-              <span id="email-error-text">Format email tidak valid (harus mengandung @ dan domain).</span>
+              <span id="email-error-text">Format email tidak valid (Contoh: puspamuktidesa@gmail.com).</span>
             </p>
           </div>
 
@@ -187,7 +187,7 @@ import AuthLayout from '../../layouts/AuthLayout.astro';
     } else if (!emailRegex.test(val)) {
       emailInput?.classList.add('border-destructive', 'focus-visible:ring-destructive');
       emailInput?.classList.remove('border-input', 'focus-visible:ring-primary');
-      if (emailErrorText) emailErrorText.textContent = 'Format email tidak valid (Contoh yang benar: admin@puspamukti.id)';
+      if (emailErrorText) emailErrorText.textContent = 'Format email tidak valid (Contoh: puspamuktidesa@gmail.com)';
       emailError?.classList.remove('hidden');
       return false;
     } else {
