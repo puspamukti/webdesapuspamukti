@@ -54,8 +54,21 @@ import Layout from '../layouts/Layout.astro';
         <p class="text-muted-foreground text-lg">Kebersamaan dan gotong royong merajut asa di tanah Puspamukti</p>
       </div>
       
+      <!-- Foto Bersama Resmi -->
+      <div class="w-full aspect-[16/10] md:aspect-[21/9] rounded-3xl overflow-hidden border-2 bg-muted relative shadow-md group">
+        <img 
+          src="/foto/foto_bersama.webp" 
+          width="1600" 
+          height="720" 
+          loading="lazy" 
+          decoding="async" 
+          alt="Foto Bersama Kelompok KKN Puspamukti 2026" 
+          class="w-full h-full object-cover object-center transition-transform group-hover:scale-105 duration-700" 
+        />
+      </div>
+
       <!-- Anggota List -->
-      <div class="space-y-6">
+      <div class="space-y-6 pt-4">
         <!-- Kormades -->
         <div class="flex justify-center mb-10">
           <div class="w-64 md:w-80 bg-card border-2 border-primary rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col group">
@@ -97,7 +110,7 @@ import Layout from '../layouts/Layout.astro';
             { nama: "Sri Intan Tiarayani", prodi: "Manajemen", foto: "/foto/Intan.webp" },
             { nama: "Via Nuroktaviani", prodi: "Pendidikan Guru Sekolah Dasar", foto: "/foto/Via.webp" },
             { nama: "Linda Mardiana", prodi: "Teknik Informatika", foto: "" },
-            { nama: "Siti Khodijah", prodi: "Manajemen", foto: "" },
+            { nama: "Siti Khodijah", prodi: "Manajemen", foto: "/foto/Siti.webp" },
             { nama: "Hasby Faisal Sidiq", prodi: "Manajemen", foto: "/foto/Hasby.webp" }
           ].map((member) => (
             <div class="w-[calc(50%-0.5rem)] sm:w-[calc(33.333%-1rem)] md:w-[calc(25%-1.125rem)] lg:w-[calc(20%-1.2rem)] bg-card border rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:border-primary/50 transition-all flex flex-col group">
